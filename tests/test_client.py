@@ -12,6 +12,7 @@ from xqshare.client import (
     XtQuantRemote,
     ReconnectPolicy,
     RemoteModule,
+    ConnectionError as XQShareConnectionError,
 )
 
 
@@ -111,6 +112,43 @@ class TestXtQuantRemote:
         client = XtQuantRemote(host="localhost", port=18812, client_secret="", auto_reconnect=False)
         
         mock_connect.assert_called_once()
+        assert client._connected is True
+
+    @patch('xqshare.client.rpyc.connect')
+    def test_sync_request_timeout_is_forwarded_to_rpyc(self, mock_connect):
+        mock_conn = Mock()
+        mock_connect.return_value = mock_conn
+
+        XtQuantRemote(
+            host="localhost", client_secret="", auto_reconnect=False,
+            sync_request_timeout=5,
+        )
+
+        assert mock_connect.call_args.kwargs["config"]["sync_request_timeout"] == 5
+
+    @patch('xqshare.client.rpyc.connect')
+    def test_connect_auth_failure_closes_connection(self, mock_connect):
+        """认证失败时必须关闭已建立的连接，否则泄漏到进程退出。"""
+        mock_conn = Mock()
+        mock_conn.root.authenticate = Mock(side_effect=Exception("auth timeout"))
+        mock_connect.return_value = mock_conn
+
+        with pytest.raises(XQShareConnectionError):
+            XtQuantRemote(host="localhost", client_secret="secret", auto_reconnect=False)
+
+        mock_conn.close.assert_called_once()
+
+    @patch('xqshare.client.rpyc.connect')
+    def test_reconnect_does_not_depend_on_removed_subscription_cache(self, mock_connect):
+        first, second = Mock(), Mock()
+        mock_connect.side_effect = (first, second)
+        client = XtQuantRemote(host="localhost", client_secret="", auto_reconnect=True)
+
+        client._connected = False
+        client._conn = first
+        client._reconnect()
+
+        assert mock_connect.call_count == 2
         assert client._connected is True
     
     @patch('xqshare.client.rpyc.connect')

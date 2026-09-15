@@ -363,6 +363,7 @@ class XtQuantRemote:
         auto_reconnect=True,
         max_retries=5,
         heartbeat_interval=30,
+        sync_request_timeout=5,
         log_level="INFO",
         env_file=None,
     ):
@@ -392,6 +393,7 @@ class XtQuantRemote:
         self._auto_reconnect = auto_reconnect
         self._reconnect_policy = ReconnectPolicy(max_retries=max_retries)
         self._heartbeat_interval = heartbeat_interval
+        self._sync_request_timeout = sync_request_timeout
         self._log_level = log_level
 
         self._conn = None
@@ -438,7 +440,7 @@ class XtQuantRemote:
             'allow_setattr': True,
             'allow_delattr': True,
             'allow_all_attrs': True,
-            'sync_request_timeout': 300,
+            'sync_request_timeout': self._sync_request_timeout,
         }
         
         ssl_context = self._create_ssl_context()
@@ -479,7 +481,25 @@ class XtQuantRemote:
             self._logger.info(f"连接成功: {self._host}:{self._port}")
         except Exception as e:
             self._connected = False
+            # socket 已建立但认证/后续步骤失败：显式关闭连接与后台服务线程，
+            # 否则 BgServingThread 持有 conn→socket 强引用，连接泄漏到进程退出。
+            self._cleanup_connection()
             raise ConnectionError(f"连接失败: {e}")
+
+    def _cleanup_connection(self):
+        """Close current connection and background serving thread, best-effort."""
+        if self._bg_thread:
+            try:
+                self._bg_thread.stop()
+            except Exception:
+                pass
+            self._bg_thread = None
+        if self._conn:
+            try:
+                self._conn.close()
+            except Exception:
+                pass
+            self._conn = None
     
     def _ensure_connected(self):
         if self._connected and self._conn:
@@ -514,13 +534,6 @@ class XtQuantRemote:
                     self._connected = False
                     self._token = None
                     self._connect()
-                    
-                    for sub in self._subscriptions:
-                        if sub._active:
-                            try:
-                                sub.start()
-                            except:
-                                pass
                     
                     self._logger.info("重连成功")
                     return
@@ -636,16 +649,8 @@ class XtQuantRemote:
     
     def close(self):
         self._stop_heartbeat_thread()
-        if self._bg_thread:
-            self._bg_thread.stop()
-            self._bg_thread = None
+        self._cleanup_connection()
         self._connected = False
-        if self._conn:
-            try:
-                self._conn.close()
-            except:
-                pass
-        self._conn = None
         self._logger.info("连接已关闭")
 
     def set_logging(self, enabled: bool = True):
