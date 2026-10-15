@@ -649,8 +649,10 @@ class XtQuantRemote:
     
     def close(self):
         self._stop_heartbeat_thread()
-        self._cleanup_connection()
         self._connected = False
+        # 先关闭连接：使 BgServingThread 阻塞中的 poll/recv 立即返回，
+        # 避免回调洪峰期间 stop() 的 join 挂起导致进程无法退出
+        self._cleanup_connection()
         self._logger.info("连接已关闭")
 
     def set_logging(self, enabled: bool = True):

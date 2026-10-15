@@ -11,6 +11,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import functools
 import json
+import threading
 from datetime import datetime
 from typing import Any, Dict, Optional
 
@@ -345,12 +346,14 @@ def _serialize_for_transfer(result):
 class LoggingProxy:
     """通用代理：拦截模块/对象的方法调用并记录日志，支持递归包装返回对象和权限检查"""
 
-    def __init__(self, target, target_name: str, client_info_getter, permission_checker=None, account_level=None):
+    def __init__(self, target, target_name: str, client_info_getter, permission_checker=None, account_level=None, subscription_hook=None):
         object.__setattr__(self, '_target', target)
         object.__setattr__(self, '_target_name', target_name)
         object.__setattr__(self, '_get_client_info', client_info_getter)
         object.__setattr__(self, '_permission_checker', permission_checker)
         object.__setattr__(self, '_account_level', account_level)
+        # 订阅跟踪钩子 hook(op, seq)，op 为 'add' / 'discard'，用于连接断开时自动退订
+        object.__setattr__(self, '_subscription_hook', subscription_hook)
 
     def __getattr__(self, name):
         target = object.__getattribute__(self, '_target')
@@ -358,6 +361,7 @@ class LoggingProxy:
         get_client_info = object.__getattribute__(self, '_get_client_info')
         permission_checker = object.__getattribute__(self, '_permission_checker')
         account_level = object.__getattribute__(self, '_account_level')
+        subscription_hook = object.__getattribute__(self, '_subscription_hook')
 
         attr = getattr(target, name)
 
@@ -376,6 +380,14 @@ class LoggingProxy:
                         raise error
 
                 result = _log_call(full_name, get_client_info(), attr, *args, **kwargs)
+
+                # 订阅跟踪：subscribe_* 成功返回订阅序号时记录，unsubscribe_* 成功时移除。
+                # 连接断开时由 XtQuantService 自动退订遗留订阅，防止死回调污染行情分发。
+                if subscription_hook:
+                    if name.startswith('subscribe_') and isinstance(result, int) and result >= 0:
+                        subscription_hook('add', result)
+                    elif name.startswith('unsubscribe_') and args and isinstance(args[0], int):
+                        subscription_hook('discard', args[0])
 
                 # 如果返回的是复杂对象（非基本类型），递归包装
                 if result is not None and hasattr(result, '__class__'):
@@ -435,6 +447,9 @@ class XtQuantService(rpyc.Service):
         self._authenticated = False
         self._client_id = None
         self._account_level = AccountLevel.FREE  # 默认为免费等级
+        self._subscriptions = set()  # 本连接的 xtdata 订阅序号，断开时自动退订
+        self._sub_lock = threading.Lock()
+        self._disposed = False  # 连接已断开标记：之后返回的订阅立即退订
         # 权限检查器在服务启动时已加载
         # 兼容不同版本 rpyc：尝试获取客户端地址
         try:
@@ -456,6 +471,44 @@ class XtQuantService(rpyc.Service):
     def on_disconnect(self, conn):
         client_info = getattr(self, '_client_info', 'unknown')
         logger.info(f"[断开] 客户端离开: {client_info}")
+        # 先标记断开并取出遗留订阅（锁内），退订动作在锁外执行。
+        # 标记之后返回的在途订阅由 _track_subscription 立即退订，消除竞态。
+        # ponytail: 兼容未走 on_connect 的连接，真实场景锁竞争出现时再精细化
+        with getattr(self, '_sub_lock', threading.Lock()):
+            self._disposed = True
+            leftover = list(getattr(self, '_subscriptions', ()))
+            if hasattr(self, '_subscriptions'):
+                self._subscriptions.clear()
+        self._unsubscribe_seqs(leftover)
+
+    def _track_subscription(self, op: str, seq: int):
+        """记录/移除本连接的订阅序号（由 LoggingProxy 钩子调用）
+
+        竞态处理：subscribe 调用在连接断开期间才返回时（客户端已被强杀），
+        直接退订该序号，避免订阅泄漏为死回调。
+        """
+        with self._sub_lock:
+            if op == 'discard':
+                self._subscriptions.discard(seq)
+                return
+            if not self._disposed:
+                self._subscriptions.add(seq)
+                return
+        self._unsubscribe_seqs([seq])
+        logger.info(f"[清理] 退订在途订阅（连接已断开）: seq={seq} | client={self._client_info}")
+
+    def _unsubscribe_seqs(self, seqs: list):
+        """退订指定的 xtdata 订阅序号列表
+
+        客户端异常退出（强杀、断网）时订阅残留在 xtdata 中，
+        行情推送会持续调用已失效的 netref 回调，污染整个行情分发链路。
+        """
+        for seq in seqs:
+            try:
+                self._xtdata.unsubscribe_quote(seq)
+                logger.info(f"[清理] 自动退订遗留订阅: seq={seq} | client={self._client_info}")
+            except Exception as e:
+                logger.warning(f"[清理] 退订失败: seq={seq} | client={self._client_info} | {e}")
 
     def _delayed_disconnect(self, delay: float = 0.5):
         """延迟断开连接，确保异常能传输到客户端"""
@@ -533,7 +586,8 @@ class XtQuantService(rpyc.Service):
             self._xtdata, 'xtdata',
             lambda: self._client_info,
             XtQuantService._permission_checker,
-            self._account_level
+            self._account_level,
+            subscription_hook=self._track_subscription
         )
 
     @log_api_call("get_xttype")
