@@ -1,5 +1,5 @@
 """
-XtQuant Share (xqshare) - Transparent remote proxy for xtquant library
+MiniQMT Share (miniqmt-share) - Transparent remote proxy for xtquant library
 
 Allows using xtquant on macOS/Linux by proxying calls to a Windows server.
 """

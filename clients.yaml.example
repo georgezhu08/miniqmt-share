@@ -1,4 +1,4 @@
-# xqshare 客户端配置示例
+# miniqmt-share 客户端配置示例
 #
 # 复制此文件为 clients.yaml 并修改配置
 # cp clients.yaml.example clients.yaml

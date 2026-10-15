@@ -1,5 +1,5 @@
 """
-测试 xqshare.tools.common 模块的输出格式化功能
+测试 miniqmt_share.tools.common 模块的输出格式化功能
 """
 
 import json
@@ -9,7 +9,7 @@ from datetime import datetime
 from io import StringIO
 from unittest.mock import patch
 
-from xqshare.tools.common import (
+from miniqmt_share.tools.common import (
     _format_as_json,
     _format_as_text,
     _format_as_csv,

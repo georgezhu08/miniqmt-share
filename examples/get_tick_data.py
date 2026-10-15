@@ -2,7 +2,7 @@
 """
 获取实时行情示例
 
-展示如何通过 xqshare 获取股票的实时tick数据。
+展示如何通过 miniqmt_share 获取股票的实时tick数据。
 
 使用示例:
     # 获取单只股票实时行情
@@ -14,7 +14,7 @@
 
 import argparse
 import os
-from xqshare import XtQuantRemote
+from miniqmt_share import XtQuantRemote
 
 
 def format_tick_info(code: str, tick: dict) -> str:
@@ -101,9 +101,9 @@ def main():
   五档行情 - 买卖盘口五档委托价格和数量
         """
     )
-    parser.add_argument("--host", help="服务端地址 (默认: 环境变量 XQSHARE_REMOTE_HOST 或 localhost)")
-    parser.add_argument("--port", type=int, help="服务端端口 (默认: 环境变量 XQSHARE_REMOTE_PORT 或 18812)")
-    parser.add_argument("--secret", help="认证密钥 (默认: 环境变量 XQSHARE_CLIENT_SECRET)")
+    parser.add_argument("--host", help="服务端地址 (默认: 环境变量 MINIQMT_SHARE_REMOTE_HOST 或 localhost)")
+    parser.add_argument("--port", type=int, help="服务端端口 (默认: 环境变量 MINIQMT_SHARE_REMOTE_PORT 或 18812)")
+    parser.add_argument("--secret", help="认证密钥 (默认: 环境变量 MINIQMT_SHARE_CLIENT_SECRET)")
     parser.add_argument("--codes", required=True, help="股票代码，逗号分隔 (如: 000001.SZ,600000.SH)")
 
     args = parser.parse_args()

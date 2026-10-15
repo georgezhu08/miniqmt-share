@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "xqshare"
-version = "1.1.3"
+name = "miniqmt-share"
+version = "1.1.3+miniqmt.1"
 description = "Xtreme Quant Share - eXtreme transparent sharing proxy for XtQuant on macOS/Linux"
 readme = "README.md"
 license = "GPL-3.0-only"
@@ -53,19 +53,20 @@ dev = [
 ]
 
 [project.scripts]
-xqshare-server = "xqshare.server:main"
-xtdata = "xqshare.tools.xtdata:main"
-xttrader = "xqshare.tools.xttrader:main"
+miniqmt-share-server = "miniqmt_share.server:main"
+miniqmt-xtdata = "miniqmt_share.tools.xtdata:main"
+miniqmt-xttrader = "miniqmt_share.tools.xttrader:main"
 
 [project.urls]
-Homepage = "https://gitee.com/jdragonhu/xqshare"
-Documentation = "https://gitee.com/jdragonhu/xqshare#readme"
-Repository = "https://gitee.com/jdragonhu/xqshare"
-Issues = "https://gitee.com/jdragonhu/xqshare/issues"
+Homepage = "https://github.com/georgezhu08/miniqmt-share"
+Documentation = "https://github.com/georgezhu08/miniqmt-share/blob/main/docs/MINIQMT_SHARE.md"
+Repository = "https://github.com/georgezhu08/miniqmt-share"
+Issues = "https://github.com/georgezhu08/miniqmt-share/issues"
+Upstream = "https://github.com/jasonhu/xqshare"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["xqshare*"]
+include = ["miniqmt_share*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.md", "*.txt"]

@@ -1,5 +1,5 @@
 """
-xqshare 测试配置和 fixtures
+miniqmt_share 测试配置和 fixtures
 
 由于本机是 Mac，xtquant 库不可用，需要 mock。
 """
@@ -13,14 +13,14 @@ from unittest.mock import MagicMock, patch
 
 def pytest_collection_modifyitems(config, items):
     """默认跳过需要真实服务端的集成测试。"""
-    if os.environ.get("XQSHARE_RUN_INTEGRATION"):
+    if os.environ.get("MINIQMT_SHARE_RUN_INTEGRATION"):
         return
     if "integration" in getattr(config.option, "markexpr", ""):
         return
     if items and all("integration" in item.keywords for item in items):
         return
 
-    skip_integration = pytest.mark.skip(reason="set XQSHARE_RUN_INTEGRATION=1 to run integration tests")
+    skip_integration = pytest.mark.skip(reason="set MINIQMT_SHARE_RUN_INTEGRATION=1 to run integration tests")
     for item in items:
         if "integration" in item.keywords:
             item.add_marker(skip_integration)
@@ -126,7 +126,7 @@ def permission_checker(temp_config_file):
     """
     创建权限检查器实例
     """
-    from xqshare.auth import PermissionChecker, reset_permission_checker
+    from miniqmt_share.auth import PermissionChecker, reset_permission_checker
     reset_permission_checker()
     checker = PermissionChecker(temp_config_file)
     yield checker
@@ -138,8 +138,8 @@ def mock_service(permission_checker):
     """
     创建 mock 服务实例
     """
-    from xqshare.server import XtQuantService
-    from xqshare.auth import reset_permission_checker
+    from miniqmt_share.server import XtQuantService
+    from miniqmt_share.auth import reset_permission_checker
 
     # 重置类级别的权限检查器
     XtQuantService._permission_checker = permission_checker

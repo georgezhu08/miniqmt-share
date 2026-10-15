@@ -1,5 +1,5 @@
 """
-XtQuant Share (xqshare) Client Tests
+MiniQMT Share (miniqmt-share) Client Tests
 """
 
 import pytest
@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch, MagicMock
 # Import the client module
 import sys
 sys.path.insert(0, '.')
-from xqshare.client import (
+from miniqmt_share.client import (
     XtQuantRemote,
     ReconnectPolicy,
     RemoteModule,
@@ -103,7 +103,7 @@ class TestRemoteModule:
 class TestXtQuantRemote:
     """测试主客户端类"""
     
-    @patch('xqshare.client.rpyc.connect')
+    @patch('miniqmt_share.client.rpyc.connect')
     def test_connect_without_auth(self, mock_connect):
         mock_conn = Mock()
         mock_conn.root.ping = Mock(return_value="pong")
@@ -114,7 +114,7 @@ class TestXtQuantRemote:
         mock_connect.assert_called_once()
         assert client._connected is True
 
-    @patch('xqshare.client.rpyc.connect')
+    @patch('miniqmt_share.client.rpyc.connect')
     def test_sync_request_timeout_is_forwarded_to_rpyc(self, mock_connect):
         mock_conn = Mock()
         mock_connect.return_value = mock_conn
@@ -126,7 +126,7 @@ class TestXtQuantRemote:
 
         assert mock_connect.call_args.kwargs["config"]["sync_request_timeout"] == 5
 
-    @patch('xqshare.client.rpyc.connect')
+    @patch('miniqmt_share.client.rpyc.connect')
     def test_connect_auth_failure_closes_connection(self, mock_connect):
         """认证失败时必须关闭已建立的连接，否则泄漏到进程退出。"""
         mock_conn = Mock()
@@ -138,7 +138,7 @@ class TestXtQuantRemote:
 
         mock_conn.close.assert_called_once()
 
-    @patch('xqshare.client.rpyc.connect')
+    @patch('miniqmt_share.client.rpyc.connect')
     def test_reconnect_does_not_depend_on_removed_subscription_cache(self, mock_connect):
         first, second = Mock(), Mock()
         mock_connect.side_effect = (first, second)
@@ -151,7 +151,7 @@ class TestXtQuantRemote:
         assert mock_connect.call_count == 2
         assert client._connected is True
     
-    @patch('xqshare.client.rpyc.connect')
+    @patch('miniqmt_share.client.rpyc.connect')
     def test_connect_with_auth(self, mock_connect):
         mock_conn = Mock()
         mock_conn.root.ping = Mock(return_value="pong")
@@ -168,7 +168,7 @@ class TestXtQuantRemote:
         mock_conn.root.authenticate.assert_called_once()
         assert client._account_level == "standard"
     
-    @patch('xqshare.client.rpyc.connect')
+    @patch('miniqmt_share.client.rpyc.connect')
     def test_context_manager(self, mock_connect):
         mock_conn = Mock()
         mock_conn.root.ping = Mock(return_value="pong")
@@ -179,7 +179,7 @@ class TestXtQuantRemote:
         
         assert client._connected is False
     
-    @patch('xqshare.client.rpyc.connect')
+    @patch('miniqmt_share.client.rpyc.connect')
     def test_should_reconnect(self, mock_connect):
         mock_conn = Mock()
         mock_conn.root.ping = Mock(return_value="pong")
@@ -197,7 +197,7 @@ class TestXtQuantRemote:
         
         client.close()
     
-    @patch('xqshare.client.rpyc.connect')
+    @patch('miniqmt_share.client.rpyc.connect')
     def test_is_connected(self, mock_connect):
         mock_conn = Mock()
         mock_conn.root.ping = Mock(return_value="pong")
@@ -213,13 +213,13 @@ class TestXtQuantRemote:
 class TestGlobalFunctions:
     """测试全局便捷函数"""
     
-    @patch('xqshare.client.rpyc.connect')
+    @patch('miniqmt_share.client.rpyc.connect')
     def test_connect_disconnect(self, mock_connect):
         mock_conn = Mock()
         mock_conn.root.ping = Mock(return_value="pong")
         mock_connect.return_value = mock_conn
         
-        from xqshare.client import connect, disconnect, get_client
+        from miniqmt_share.client import connect, disconnect, get_client
         
         client = connect(host="localhost", auto_reconnect=False)
         assert client is not None

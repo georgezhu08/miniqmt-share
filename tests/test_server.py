@@ -1,5 +1,5 @@
 """
-XtQuant Share (xqshare) Server Tests
+MiniQMT Share (miniqmt-share) Server Tests
 """
 
 import pytest
@@ -12,17 +12,17 @@ sys.path.insert(0, '.')
 
 
 # Initialize logging before importing server
-from xqshare.server import _init_logging
+from miniqmt_share.server import _init_logging
 _init_logging("WARNING")  # Quiet logs for tests
 
-from xqshare.server import (
+from miniqmt_share.server import (
     XtQuantService,
     AuthError,
     LoggingProxy,
     _summarize_result,
     create_ssl_context,
 )
-from xqshare.auth import PermissionChecker
+from miniqmt_share.auth import PermissionChecker
 
 
 class TestSummarizeResult:
@@ -99,7 +99,7 @@ class TestSSLContext:
         ctx = create_ssl_context(None, None)
         assert ctx is None
     
-    @patch('xqshare.server.ssl.SSLContext')
+    @patch('miniqmt_share.server.ssl.SSLContext')
     def test_create_ssl_context_with_files(self, mock_ssl_context):
         mock_ctx = Mock()
         mock_ssl_context.return_value = mock_ctx

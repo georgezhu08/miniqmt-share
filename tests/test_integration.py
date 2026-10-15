@@ -1,5 +1,5 @@
 """
-XtQuant Share (xqshare) Integration Tests
+MiniQMT Share (miniqmt-share) Integration Tests
 
 These tests require a running server and are marked with @pytest.mark.integration.
 Run with: pytest -m integration
@@ -24,7 +24,7 @@ class TestIntegration:
 
     def test_connection(self):
         """测试基本连接"""
-        from xqshare import XtQuantRemote
+        from miniqmt_share import XtQuantRemote
 
         with XtQuantRemote(
             host=self.host,
@@ -36,7 +36,7 @@ class TestIntegration:
 
     def test_ping(self):
         """测试心跳"""
-        from xqshare import XtQuantRemote
+        from miniqmt_share import XtQuantRemote
 
         with XtQuantRemote(
             host=self.host,
@@ -48,7 +48,7 @@ class TestIntegration:
 
     def test_service_status(self):
         """测试服务状态"""
-        from xqshare import XtQuantRemote
+        from miniqmt_share import XtQuantRemote
 
         with XtQuantRemote(
             host=self.host,

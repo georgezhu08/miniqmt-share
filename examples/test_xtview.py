@@ -7,7 +7,7 @@ xtview 模块测试示例
 3. UI 面板控制（可选）
 """
 
-from xqshare import connect, disconnect
+from miniqmt_share import connect, disconnect
 
 
 def test_xtview_connection():
@@ -74,7 +74,7 @@ def test_ui_panel(xt):
     try:
         # 创建一个简单的 UI 面板
         # 注意：这需要 QMT 客户端正在运行
-        from xqshare.client import XtQuantRemote
+        from miniqmt_share.client import XtQuantRemote
 
         # UIPanel 参数：code, period, figures, startX, startY, width, height
         panel = xt.xtview.UIPanel(

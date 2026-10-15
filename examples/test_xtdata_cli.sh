@@ -15,8 +15,8 @@
 set -e
 
 # ==================== 默认参数 ====================
-HOST="${XQSHARE_REMOTE_HOST:-localhost}"
-PORT="${XQSHARE_REMOTE_PORT:-18812}"
+HOST="${MINIQMT_SHARE_REMOTE_HOST:-localhost}"
+PORT="${MINIQMT_SHARE_REMOTE_PORT:-18812}"
 FORMAT="json"
 COMPACT="--compact"
 LIMIT=""

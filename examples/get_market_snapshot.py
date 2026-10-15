@@ -20,7 +20,7 @@
 """
 
 import argparse
-from xqshare import XtQuantRemote
+from miniqmt_share import XtQuantRemote
 
 
 def is_a_share(code: str) -> bool:
@@ -48,9 +48,9 @@ def main():
   成交额   - 当日累计成交金额（元）
         """
     )
-    parser.add_argument("--host", help="服务端地址 (默认: 环境变量 XQSHARE_REMOTE_HOST 或 localhost)")
-    parser.add_argument("--port", type=int, help="服务端端口 (默认: 环境变量 XQSHARE_REMOTE_PORT 或 18812)")
-    parser.add_argument("--secret", help="认证密钥 (默认: 环境变量 XQSHARE_CLIENT_SECRET)")
+    parser.add_argument("--host", help="服务端地址 (默认: 环境变量 MINIQMT_SHARE_REMOTE_HOST 或 localhost)")
+    parser.add_argument("--port", type=int, help="服务端端口 (默认: 环境变量 MINIQMT_SHARE_REMOTE_PORT 或 18812)")
+    parser.add_argument("--secret", help="认证密钥 (默认: 环境变量 MINIQMT_SHARE_CLIENT_SECRET)")
     parser.add_argument("--top", type=int, default=20, help="输出条数 (默认: 20)")
     parser.add_argument("--sort", choices=['desc', 'asc'], default='desc',
                         help="按涨跌幅排序：desc=涨幅榜（默认），asc=跌幅榜")

@@ -2,7 +2,7 @@
 """
 订阅实时行情推送示例
 
-展示如何通过 xqshare 订阅股票实时行情推送。
+展示如何通过 miniqmt_share 订阅股票实时行情推送。
 使用 netref + BgServingThread 实现异步回调。
 
 使用示例:
@@ -22,7 +22,7 @@ import signal
 import sys
 import os
 from datetime import datetime
-from xqshare import XtQuantRemote
+from miniqmt_share import XtQuantRemote
 
 # 全局变量用于优雅退出
 running = True
@@ -103,9 +103,9 @@ def main():
   成交额   - 当日累计成交金额（元）
         """
     )
-    parser.add_argument("--host", help="服务端地址 (默认: 环境变量 XQSHARE_REMOTE_HOST 或 localhost)")
-    parser.add_argument("--port", type=int, help="服务端端口 (默认: 环境变量 XQSHARE_REMOTE_PORT 或 18812)")
-    parser.add_argument("--secret", help="认证密钥 (默认: 环境变量 XQSHARE_CLIENT_SECRET)")
+    parser.add_argument("--host", help="服务端地址 (默认: 环境变量 MINIQMT_SHARE_REMOTE_HOST 或 localhost)")
+    parser.add_argument("--port", type=int, help="服务端端口 (默认: 环境变量 MINIQMT_SHARE_REMOTE_PORT 或 18812)")
+    parser.add_argument("--secret", help="认证密钥 (默认: 环境变量 MINIQMT_SHARE_CLIENT_SECRET)")
     parser.add_argument("--codes", required=True, help="股票代码，逗号分隔 (如: 000001.SZ,600000.SH)")
     parser.add_argument("--duration", type=int, default=60,
                         help="订阅时长（秒），0表示持续订阅 (默认: 60)")

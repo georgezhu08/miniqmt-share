@@ -1,5 +1,5 @@
 """
-XtQuant Share (xqshare) Server Permission Tests
+MiniQMT Share (miniqmt-share) Server Permission Tests
 
 测试服务端权限检查逻辑
 """
@@ -25,18 +25,18 @@ sys.modules['xtquant.xttrader'] = mock_xttrader
 sys.modules['xtquant.xttype'] = mock_xttype
 
 # 初始化日志
-from xqshare.server import _init_logging
+from miniqmt_share.server import _init_logging
 _init_logging("WARNING")
 
 # 导入反序列化函数（服务端返回的是序列化数据，测试时需要反序列化）
-from xqshare.client import _deserialize_from_transfer
+from miniqmt_share.client import _deserialize_from_transfer
 
-from xqshare.server import (
+from miniqmt_share.server import (
     XtQuantService,
     LoggingProxy,
     AuthError,
 )
-from xqshare.auth import (
+from miniqmt_share.auth import (
     Permission,
     AccountLevel,
     PermissionChecker,

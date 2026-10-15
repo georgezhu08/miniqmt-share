@@ -1,5 +1,5 @@
 """
-XtQuant Share (xqshare) Client Permission Tests
+MiniQMT Share (miniqmt-share) Client Permission Tests
 
 测试客户端权限相关逻辑
 """
@@ -28,7 +28,7 @@ class TestClientAuthResponse:
 
     def test_client_stores_account_level(self):
         """测试客户端存储账号等级"""
-        from xqshare.client import XtQuantRemote
+        from miniqmt_share.client import XtQuantRemote
 
         # Mock rpyc 连接
         mock_conn = MagicMock()
@@ -39,13 +39,13 @@ class TestClientAuthResponse:
         mock_root.authenticate.return_value = {"success": True, "level": "plus"}
         mock_root.heartbeat.return_value = "pong"
 
-        with patch('xqshare.client.rpyc.connect', return_value=mock_conn):
-            with patch('xqshare.client.BgServingThread'):
+        with patch('miniqmt_share.client.rpyc.connect', return_value=mock_conn):
+            with patch('miniqmt_share.client.BgServingThread'):
                 with patch.dict(os.environ, {
-                    "XQSHARE_REMOTE_HOST": "localhost",
-                    "XQSHARE_REMOTE_PORT": "18812",
-                    "XQSHARE_CLIENT_ID": "test-client",
-                    "XQSHARE_CLIENT_SECRET": "test-secret"
+                    "MINIQMT_SHARE_REMOTE_HOST": "localhost",
+                    "MINIQMT_SHARE_REMOTE_PORT": "18812",
+                    "MINIQMT_SHARE_CLIENT_ID": "test-client",
+                    "MINIQMT_SHARE_CLIENT_SECRET": "test-secret"
                 }):
                     client = XtQuantRemote(
                         host="localhost",
@@ -60,7 +60,7 @@ class TestClientAuthResponse:
 
     def test_client_handles_old_auth_format(self):
         """测试客户端兼容旧格式认证响应（返回 True）"""
-        from xqshare.client import XtQuantRemote
+        from miniqmt_share.client import XtQuantRemote
 
         mock_conn = MagicMock()
         mock_root = MagicMock()
@@ -70,8 +70,8 @@ class TestClientAuthResponse:
         mock_root.authenticate.return_value = True
         mock_root.heartbeat.return_value = "pong"
 
-        with patch('xqshare.client.rpyc.connect', return_value=mock_conn):
-            with patch('xqshare.client.BgServingThread'):
+        with patch('miniqmt_share.client.rpyc.connect', return_value=mock_conn):
+            with patch('miniqmt_share.client.BgServingThread'):
                 client = XtQuantRemote(
                     host="localhost",
                     port=18812,
@@ -90,7 +90,7 @@ class TestClientPermissionIntegration:
     def test_client_calls_require_permission(self):
         """测试客户端调用 API 时权限被检查"""
         # 这个测试验证当服务端拒绝时，客户端收到异常
-        from xqshare.auth import PermissionError as AuthPermissionError, Permission, AccountLevel
+        from miniqmt_share.auth import PermissionError as AuthPermissionError, Permission, AccountLevel
 
         # 创建一个模拟的权限错误
         error = AuthPermissionError(Permission.MINUTE, "get_market_data", AccountLevel.FREE)
@@ -102,7 +102,7 @@ class TestClientPermissionIntegration:
 
     def test_permission_error_propagation(self):
         """测试权限错误可以正确传播"""
-        from xqshare.auth import PermissionError as AuthPermissionError, Permission, AccountLevel
+        from miniqmt_share.auth import PermissionError as AuthPermissionError, Permission, AccountLevel
 
         # 创建权限错误
         error = AuthPermissionError(Permission.TICK, "get_full_tick", AccountLevel.PLUS)
@@ -121,7 +121,7 @@ class TestClientProperties:
 
     def test_xtdata_property(self):
         """测试 xtdata 属性返回 RemoteModule"""
-        from xqshare.client import XtQuantRemote, RemoteModule
+        from miniqmt_share.client import XtQuantRemote, RemoteModule
 
         mock_conn = MagicMock()
         mock_root = MagicMock()
@@ -130,8 +130,8 @@ class TestClientProperties:
         mock_root.heartbeat.return_value = "pong"
         mock_root.get_xtdata.return_value = MagicMock()
 
-        with patch('xqshare.client.rpyc.connect', return_value=mock_conn):
-            with patch('xqshare.client.BgServingThread'):
+        with patch('miniqmt_share.client.rpyc.connect', return_value=mock_conn):
+            with patch('miniqmt_share.client.BgServingThread'):
                 client = XtQuantRemote(
                     host="localhost",
                     port=18812,
@@ -146,7 +146,7 @@ class TestClientProperties:
 
     def test_create_trader_method_exists(self):
         """测试交易实例通过 create_trader 创建"""
-        from xqshare.client import XtQuantRemote
+        from miniqmt_share.client import XtQuantRemote
 
         mock_conn = MagicMock()
         mock_root = MagicMock()
@@ -154,8 +154,8 @@ class TestClientProperties:
         mock_root.authenticate.return_value = {"success": True, "level": "premium"}
         mock_root.heartbeat.return_value = "pong"
 
-        with patch('xqshare.client.rpyc.connect', return_value=mock_conn):
-            with patch('xqshare.client.BgServingThread'):
+        with patch('miniqmt_share.client.rpyc.connect', return_value=mock_conn):
+            with patch('miniqmt_share.client.BgServingThread'):
                 client = XtQuantRemote(
                     host="localhost",
                     port=18812,
@@ -172,7 +172,7 @@ class TestClientEnvConfig:
 
     def test_client_uses_env_vars(self):
         """测试客户端使用环境变量配置"""
-        from xqshare.client import XtQuantRemote
+        from miniqmt_share.client import XtQuantRemote
 
         mock_conn = MagicMock()
         mock_root = MagicMock()
@@ -180,13 +180,13 @@ class TestClientEnvConfig:
         mock_root.authenticate.return_value = {"success": True, "level": "standard"}
         mock_root.heartbeat.return_value = "pong"
 
-        with patch('xqshare.client.rpyc.connect', return_value=mock_conn):
-            with patch('xqshare.client.BgServingThread'):
+        with patch('miniqmt_share.client.rpyc.connect', return_value=mock_conn):
+            with patch('miniqmt_share.client.BgServingThread'):
                 with patch.dict(os.environ, {
-                    "XQSHARE_REMOTE_HOST": "192.168.1.100",
-                    "XQSHARE_REMOTE_PORT": "18888",
-                    "XQSHARE_CLIENT_ID": "env-client",
-                    "XQSHARE_CLIENT_SECRET": "env-secret"
+                    "MINIQMT_SHARE_REMOTE_HOST": "192.168.1.100",
+                    "MINIQMT_SHARE_REMOTE_PORT": "18888",
+                    "MINIQMT_SHARE_CLIENT_ID": "env-client",
+                    "MINIQMT_SHARE_CLIENT_SECRET": "env-secret"
                 }):
                     client = XtQuantRemote(heartbeat_interval=0)
 

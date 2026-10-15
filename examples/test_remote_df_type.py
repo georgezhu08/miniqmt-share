@@ -7,7 +7,7 @@
 
 import argparse
 import pandas as pd
-from xqshare import XtQuantRemote
+from miniqmt_share import XtQuantRemote
 
 
 def inspect_object(obj, name="obj"):

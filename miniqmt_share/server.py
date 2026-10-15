@@ -1,5 +1,5 @@
 """
-XtQuant Share (xqshare) Server - Run on Windows to provide xtquant proxy service
+MiniQMT Share (miniqmt-share) Server - Run on Windows to provide xtquant proxy service
 """
 
 import rpyc
@@ -87,13 +87,13 @@ def setup_logging(log_dir: str = None, log_level: str = "INFO", log_retention: i
     """配置日志系统
 
     Args:
-        log_dir: 日志目录，默认从 XQSHARE_LOG_DIR 环境变量读取
+        log_dir: 日志目录，默认从 MINIQMT_SHARE_LOG_DIR 环境变量读取
         log_level: 日志级别，默认 INFO
         log_retention: 日志保留天数，0 表示不自动删除（默认 0）
                        大于 0 时，每日轮转并自动删除超过天数的旧日志
     """
     if log_dir is None:
-        log_dir = os.environ.get("XQSHARE_LOG_DIR", "logs")
+        log_dir = os.environ.get("MINIQMT_SHARE_LOG_DIR", "logs")
     os.makedirs(log_dir, exist_ok=True)
 
     formatter = logging.Formatter(
@@ -157,7 +157,7 @@ def set_server_logging(enabled: bool = True):
         enabled: True 打开日志，False 关闭日志
 
     Example:
-        from xqshare.server import set_server_logging
+        from miniqmt_share.server import set_server_logging
         set_server_logging(False)   # 关闭服务端日志
         set_server_logging(True)    # 重新打开
     """
@@ -785,10 +785,10 @@ def start_server(host="0.0.0.0", port=None, use_ssl=False, certfile=None, keyfil
         pass
 
     if port is None:
-        port = int(os.environ.get("XQSHARE_PORT", "18812"))
+        port = int(os.environ.get("MINIQMT_SHARE_PORT", "18812"))
 
     if log_retention is None:
-        log_retention = int(os.environ.get("XQSHARE_LOG_RETENTION", "0"))
+        log_retention = int(os.environ.get("MINIQMT_SHARE_LOG_RETENTION", "0"))
 
     if not XTQUANT_AVAILABLE:
         print("错误: xtquant 库未安装，请先安装 xtquant")
@@ -798,7 +798,7 @@ def start_server(host="0.0.0.0", port=None, use_ssl=False, certfile=None, keyfil
     XtQuantService._start_time = time.time()
 
     print("=" * 70)
-    print("  XtQuant Share (xqshare) 服务")
+    print("  MiniQMT Share (miniqmt-share) 服务")
     print("=" * 70)
     print(f"  监听地址: {host}:{port}")
     print(f"  SSL 加密: {'启用' if use_ssl else '禁用'}")
@@ -882,27 +882,27 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="XtQuant Share (xqshare) 服务",
+        description="MiniQMT Share (miniqmt-share) 服务",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
-  xqshare-server                    # 使用默认配置启动
-  xqshare-server --port 18813       # 指定端口
-  xqshare-server --ssl --cert cert.pem --key key.pem  # 启用 SSL
+  miniqmt-share-server                    # 使用默认配置启动
+  miniqmt-share-server --port 18813       # 指定端口
+  miniqmt-share-server --ssl --cert cert.pem --key key.pem  # 启用 SSL
 
 环境变量:
-  XQSHARE_PORT      服务端口 (默认: 18812)
+  MINIQMT_SHARE_PORT      服务端口 (默认: 18812)
   QMT_USERDATA_PATH QMT userdata_mini 目录路径
         """
     )
     parser.add_argument("--host", default="0.0.0.0", help="监听地址 (默认: 0.0.0.0)")
-    parser.add_argument("--port", type=int, default=None, help="监听端口 (默认: 18812 或 XQSHARE_PORT)")
+    parser.add_argument("--port", type=int, default=None, help="监听端口 (默认: 18812 或 MINIQMT_SHARE_PORT)")
     parser.add_argument("--ssl", action="store_true", help="启用 SSL 加密")
     parser.add_argument("--cert", help="SSL 证书文件")
     parser.add_argument("--key", help="SSL 私钥文件")
     parser.add_argument("--log-level", default="INFO", help="日志级别 (默认: INFO)")
     parser.add_argument("--log-retention", type=int, default=None, 
-                        help="日志保留天数，0=不限制 (默认: 0，环境变量: XQSHARE_LOG_RETENTION)")
+                        help="日志保留天数，0=不限制 (默认: 0，环境变量: MINIQMT_SHARE_LOG_RETENTION)")
     parser.add_argument("--env-file", default=".env", help="环境变量文件 (默认: .env)")
 
     args = parser.parse_args()

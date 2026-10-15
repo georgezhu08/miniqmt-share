@@ -11,11 +11,11 @@ import argparse
 from contextlib import contextmanager
 
 # 环境变量名
-ENV_HOST = "XQSHARE_REMOTE_HOST"
-ENV_PORT = "XQSHARE_REMOTE_PORT"
-ENV_SECRET = "XQSHARE_CLIENT_SECRET"
-ENV_CLIENT_ID = "XQSHARE_CLIENT_ID"
-ENV_FORMAT = "XQSHARE_FORMAT"
+ENV_HOST = "MINIQMT_SHARE_REMOTE_HOST"
+ENV_PORT = "MINIQMT_SHARE_REMOTE_PORT"
+ENV_SECRET = "MINIQMT_SHARE_CLIENT_SECRET"
+ENV_CLIENT_ID = "MINIQMT_SHARE_CLIENT_ID"
+ENV_FORMAT = "MINIQMT_SHARE_FORMAT"
 
 
 @contextmanager
@@ -27,10 +27,10 @@ def create_client(host=None, port=None, secret=None, client_id=None, quiet=True)
     """
     if quiet:
         # 在导入前设置静默模式
-        from xqshare.client import set_quiet_mode
+        from miniqmt_share.client import set_quiet_mode
         set_quiet_mode(True)
 
-    from xqshare import XtQuantRemote
+    from miniqmt_share import XtQuantRemote
 
     h = host or os.environ.get(ENV_HOST, "localhost")
     p = port or int(os.environ.get(ENV_PORT, "18812"))
@@ -387,15 +387,15 @@ def _format_object_attrs(obj):
 
 def add_global_args(parser):
     """添加全局参数"""
-    parser.add_argument("--host", help="服务端地址，可通过 XQSHARE_REMOTE_HOST 环境变量设置")
-    parser.add_argument("--port", type=int, help="服务端端口，可通过 XQSHARE_REMOTE_PORT 环境变量设置")
-    parser.add_argument("--secret", help="认证密钥，可通过 XQSHARE_CLIENT_SECRET 环境变量设置")
-    parser.add_argument("--client-id", dest="client_id", help="客户端标识，可通过 XQSHARE_CLIENT_ID 环境变量设置")
+    parser.add_argument("--host", help="服务端地址，可通过 MINIQMT_SHARE_REMOTE_HOST 环境变量设置")
+    parser.add_argument("--port", type=int, help="服务端端口，可通过 MINIQMT_SHARE_REMOTE_PORT 环境变量设置")
+    parser.add_argument("--secret", help="认证密钥，可通过 MINIQMT_SHARE_CLIENT_SECRET 环境变量设置")
+    parser.add_argument("--client-id", dest="client_id", help="客户端标识，可通过 MINIQMT_SHARE_CLIENT_ID 环境变量设置")
     parser.add_argument("--limit", "-n", type=int, default=50, help="列表输出数量限制 (默认: 50，0 表示不限制)")
     parser.add_argument("--verbose", "-v", action="store_true", help="显示详细日志")
     parser.add_argument("--output", "-o", help="输出文件路径")
     parser.add_argument("--format", "-f", dest="output_format", choices=["text", "json", "csv"],
-                        help="输出格式 (环境变量: XQSHARE_FORMAT, 默认: text)")
+                        help="输出格式 (环境变量: MINIQMT_SHARE_FORMAT, 默认: text)")
     parser.add_argument("--compact", action="store_true", help="紧凑模式输出 (仅对 json 格式有效)")
     return parser
 
