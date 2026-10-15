@@ -43,7 +43,7 @@ description: 管理自选股票池。支持添加、删除、查看、搜索股�
 
 **操作流程**:
 1. 解析股票代码（支持自动补全交易所后缀）
-2. 调用 `xtdata get_instrument_detail --stock-code "代码"` 获取股票名称
+2. 调用 `miniqmt-xtdata get_instrument_detail --stock-code "代码"` 获取股票名称
 3. 若用户指定分组，添加到对应分组；否则询问或使用默认分组
 4. 检查是否已存在，避免重复
 5. 追加到 stock-pool.md
@@ -92,22 +92,22 @@ description: 管理自选股票池。支持添加、删除、查看、搜索股�
 **重命名分组**: `重命名分组 观察股 为 待观察`
 **删除分组**: `删除分组 待研究`（组内股票移至默认分组）
 
-## 与 xtdata 联动
+## 与 miniqmt-xtdata 联动
 
 **获取股票名称**:
 ```bash
-xtdata get_instrument_detail --stock-code "000001.SZ"
+miniqmt-xtdata get_instrument_detail --stock-code "000001.SZ"
 # 返回 InstrumentName 字段即为股票名称
 ```
 
 **批量获取**:
 ```bash
-xtdata get_instrument_detail_list --stock-list "['000001.SZ','600000.SH']"
+miniqmt-xtdata get_instrument_detail_list --stock-list "['000001.SZ','600000.SH']"
 ```
 
 ## 注意事项
 
 - 股票池数据存储在本地 stock-pool.md 文件中
-- 添加股票时会自动通过 xtdata 获取股票名称
-- 若 xtdata 服务不可用，提示用户手动输入名称
+- 添加股票时会自动通过 miniqmt-xtdata 获取股票名称
+- 若 miniqmt-xtdata 服务不可用，提示用户手动输入名称
 - 支持的交易所: SZ(深圳)、SH(上海)

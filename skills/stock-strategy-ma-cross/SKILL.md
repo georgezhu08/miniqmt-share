@@ -278,8 +278,8 @@ n = 14（默认周期）
 
 **操作流程**：
 1. 解析股票代码（支持自动补全交易所后缀）
-2. 确保数据已下载（必要时先调用 xtdata download_history_data2）
-3. 获取K线数据（调用 xtdata get_market_data_ex）
+2. 确保数据已下载（必要时先调用 miniqmt-xtdata download_history_data2）
+3. 获取K线数据（调用 miniqmt-xtdata get_market_data_ex）
 4. 计算快线和慢线
 5. 检测交叉点
 6. 生成信号列表
@@ -343,7 +343,7 @@ n = 14（默认周期）
 2026-03-06 10:00,000001.SZ,卖出,10.85,10.92,68.5,2
 ```
 
-## 与 xtdata 联动
+## 与 miniqmt-xtdata 联动
 
 ### 数据下载
 
@@ -358,10 +358,10 @@ n = 14（默认周期）
 
 ```bash
 # 5分钟K线，需要 69 根，约 2 天
-xtdata download_history_data2 --stock-list "['000001.SZ']" --period "5m" --start-time "20260303"
+miniqmt-xtdata download_history_data2 --stock-list "['000001.SZ']" --period "5m" --start-time "20260303"
 
 # 日线，需要 69 根，69 天
-xtdata download_history_data2 --stock-list "['000001.SZ']" --period "1d" --start-time "20251226"
+miniqmt-xtdata download_history_data2 --stock-list "['000001.SZ']" --period "1d" --start-time "20251226"
 ```
 
 **动态计算模板**：
@@ -381,13 +381,13 @@ period=1m:   start_time = today - ceil(bars_recommended / 240) (天)
 
 ```bash
 # 使用相同的 start_time 获取数据
-xtdata get_market_data_ex --stock-list "['000001.SZ']" --period "5m" --start-time "20260304"
+miniqmt-xtdata get_market_data_ex --stock-list "['000001.SZ']" --period "5m" --start-time "20260304"
 ```
 
 ### 获取股票名称
 
 ```bash
-xtdata get_instrument_detail --stock-code "000001.SZ"
+miniqmt-xtdata get_instrument_detail --stock-code "000001.SZ"
 ```
 
 ## 数据准备提示
@@ -402,8 +402,8 @@ xtdata get_instrument_detail --stock-code "000001.SZ"
 1. 计算数据量: bars_needed = max(slow_period, 20) + sustain_period + 14 + 10
 2. 推荐数量: bars_recommended = bars_needed * 1.5
 3. 计算 start_time: 根据 period 和 bars_recommended 推算
-4. 优先获取数据: xtdata get_market_data_ex（直接查缓存）
-5. 若数据不足: xtdata download_history_data2（下载缺失数据）
+4. 优先获取数据: miniqmt-xtdata get_market_data_ex（直接查缓存）
+5. 若数据不足: miniqmt-xtdata download_history_data2（下载缺失数据）
 6. 计算 MA(快)、MA(慢)、MA20、RSI(14)
 7. 检测交叉点并应用过滤条件
 8. 生成信号并存储
@@ -416,7 +416,7 @@ bars_recommended = 46 * 1.5 = 69 根
 days = ceil(69 / 48) = 2 天
 start_time = 20260305 - 2 = 20260303
 
-命令: xtdata get_market_data_ex --stock-list "['000001.SZ']" --period "5m" --start-time "20260303"
+命令: miniqmt-xtdata get_market_data_ex --stock-list "['000001.SZ']" --period "5m" --start-time "20260303"
 ```
 
 ## 信号输出格式
@@ -487,4 +487,4 @@ K线周期: 5分钟
 | K线数据不足 | 提示数据量不足以计算指标（需要至少46根K线） |
 | RSI计算失败 | 检查数据连续性，确保无缺失数据 |
 | MA20计算失败 | 检查数据量是否达到20根K线 |
-| xtdata 服务不可用 | 提示检查 xtdata 服务状态 |
+| miniqmt-xtdata 服务不可用 | 提示检查 miniqmt-xtdata 服务状态 |

@@ -1,5 +1,5 @@
 #!/bin/bash
-# xtdata CLI 测试脚本 - 标准级别函数覆盖
+# miniqmt-xtdata CLI 测试脚本 - 标准级别函数覆盖
 #
 # 用法:
 #   ./test_xtdata_cli.sh                    # 默认: json格式, compact模式
@@ -104,7 +104,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ==================== 构建命令前缀 ====================
-CMD="xtdata --host $HOST --port $PORT -f $FORMAT $COMPACT $VERBOSE $LIMIT"
+CMD="miniqmt-xtdata --host $HOST --port $PORT -f $FORMAT $COMPACT $VERBOSE $LIMIT"
 
 # 辅助函数：检查是否应该运行某个级别
 should_run() {
@@ -130,7 +130,7 @@ truncate_output() {
 }
 
 echo "=========================================="
-echo "xtdata CLI 测试 (标准级别)"
+echo "miniqmt-xtdata CLI 测试 (标准级别)"
 echo "=========================================="
 echo "配置:"
 echo "  服务端: $HOST:$PORT"

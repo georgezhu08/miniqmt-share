@@ -1,23 +1,23 @@
 ---
-name: xttrader
-description: xqshare 交易命令行工具，查询持仓、资产、下单、撤单等
+name: miniqmt-xttrader
+description: miniqmt-share 交易命令行工具，查询持仓、资产、下单、撤单等
 ---
 
-# xttrader - 交易工具
+# miniqmt-xttrader - 交易工具
 
 ## ⚠️ 重要约束
 
-**必须使用 `xttrader` 命令行工具，禁止直接调用 Python xtquant 库**
+**必须使用 `miniqmt-xttrader` 命令行工具，禁止直接调用 Python xtquant 库**
 
 | ✅ 正确做法 | ❌ 错误做法 |
 |------------|------------|
-| `xttrader query_stock_positions` | `from xtquant import xttrader` |
-| `xttrader order_stock --stock-code "..."` | `trader.order_stock(...)` |
+| `miniqmt-xttrader query_stock_positions` | `from xtquant import xttrader` |
+| `miniqmt-xttrader order_stock --stock-code "..."` | `trader.order_stock(...)` |
 
 **原因**：
 - xtquant 只能在 Windows 上运行
 - 本地环境（macOS/Linux）无法直接调用 xtquant
-- 必须通过 xqshare 的命令行工具远程调用
+- 必须通过 miniqmt-share 的命令行工具远程调用
 
 ## 使用场景
 
@@ -34,20 +34,20 @@ description: xqshare 交易命令行工具，查询持仓、资产、下单、�
 | 组件 | 要求 | 说明 |
 |------|------|------|
 | Windows 服务器 | 必需 | xtquant 只能运行在 Windows |
-| xqshare 服务端 | 必需运行 | 在 Windows 上启动远程服务 |
+| miniqmt-share 服务端 | 必需运行 | 在 Windows 上启动远程服务 |
 
 **本 skill 假设**：
 - Windows 上已配置好 xtquant 环境（含 miniQMT）
-- xqshare 服务端已启动并可访问
+- miniqmt-share 服务端已启动并可访问
 - 客户端环境变量已正确配置
 
 ## 客户端配置
 
-- 已安装 xqshare：`pip install xqshare`
+- 已安装 miniqmt-share：`cd /path/to/miniqmt-share && python -m pip install -e . （本地 fork，见 docs/MINIQMT_SHARE.md）`
 - 已配置环境变量（推荐）：
   ```bash
-  export XQSHARE_REMOTE_HOST="192.168.1.100"
-  export XQSHARE_CLIENT_SECRET="your-secret"
+  export MINIQMT_SHARE_REMOTE_HOST="192.168.1.100"
+  export MINIQMT_SHARE_CLIENT_SECRET="your-secret"
   export QMT_ACCOUNT_ID="你的资金账号"
   export QMT_USERDATA_PATH="C:\\QMT\\userdata_mini"
   ```
@@ -55,7 +55,7 @@ description: xqshare 交易命令行工具，查询持仓、资产、下单、�
 ## 命令格式
 
 ```bash
-xttrader [全局参数] <command> [API参数]
+miniqmt-xttrader [全局参数] <command> [API参数]
 ```
 
 **参数规则**：全局参数在 command 之前，API 参数在 command 之后
@@ -64,9 +64,9 @@ xttrader [全局参数] <command> [API参数]
 
 | 参数 | 环境变量 | 说明 |
 |------|----------|------|
-| `--host` | XQSHARE_REMOTE_HOST | 服务端地址 |
-| `--port` | XQSHARE_REMOTE_PORT | 服务端端口 |
-| `--secret` | XQSHARE_CLIENT_SECRET | 认证密钥 |
+| `--host` | MINIQMT_SHARE_REMOTE_HOST | 服务端地址 |
+| `--port` | MINIQMT_SHARE_REMOTE_PORT | 服务端端口 |
+| `--secret` | MINIQMT_SHARE_CLIENT_SECRET | 认证密钥 |
 | `--account-id` | QMT_ACCOUNT_ID | 资金账号 |
 | `--account-type` | - | 账户类型（默认 STOCK） |
 | `--userdata-path` | QMT_USERDATA_PATH | QMT userdata_mini 路径 |
@@ -85,43 +85,43 @@ xttrader [全局参数] <command> [API参数]
 
 ### 查询持仓
 ```bash
-xttrader query_stock_positions
-xttrader --account-id "12345678" query_stock_positions
+miniqmt-xttrader query_stock_positions
+miniqmt-xttrader --account-id "12345678" query_stock_positions
 ```
 
 ### 查询资产
 ```bash
-xttrader query_stock_asset
+miniqmt-xttrader query_stock_asset
 ```
 
 ### 查询订单
 ```bash
 # 查询所有订单
-xttrader query_stock_orders
+miniqmt-xttrader query_stock_orders
 
 # 仅查询可撤订单
-xttrader query_stock_orders --cancelable-only true
+miniqmt-xttrader query_stock_orders --cancelable-only true
 ```
 
 ### 查询成交
 ```bash
-xttrader query_stock_trades
+miniqmt-xttrader query_stock_trades
 ```
 
 ### 下单
 ```bash
 # order_type: 23=买入, 24=卖出
 # price_type: 11=限价, 12=市价
-xttrader order_stock --stock-code "000001.SZ" --order-type 23 --order-volume 100 --price-type 11 --price 10.0
+miniqmt-xttrader order_stock --stock-code "000001.SZ" --order-type 23 --order-volume 100 --price-type 11 --price 10.0
 ```
 
 ### 撤单
 ```bash
 # 按订单ID撤单
-xttrader cancel_order_stock --order-id "订单ID"
+miniqmt-xttrader cancel_order_stock --order-id "订单ID"
 
 # 按柜台编号撤单
-xttrader cancel_order_stock_sysid --market "SH" --sysid "柜台合同编号"
+miniqmt-xttrader cancel_order_stock_sysid --market "SH" --sysid "柜台合同编号"
 ```
 
 ## ⚠️ 安全提示
@@ -143,7 +143,7 @@ xttrader cancel_order_stock_sysid --market "SH" --sysid "柜台合同编号"
 **示例**：
 ```
 AI: 即将执行下单操作：
-    命令: xttrader order_stock --stock-code "000001.SZ" --order-type 23 --order-volume 100 --price-type 11 --price 10.0
+    命令: miniqmt-xttrader order_stock --stock-code "000001.SZ" --order-type 23 --order-volume 100 --price-type 11 --price 10.0
     操作: 买入 平安银行(000001.SZ) 100股，限价 10.0 元
     预估金额: 1000 元
 
@@ -159,7 +159,7 @@ AI: [执行命令]
 使用 Python API 时，可以在运行时开关日志：
 
 ```python
-from xqshare import connect, disable_logging, enable_logging
+from miniqmt_share import connect, disable_logging, enable_logging
 
 connect("192.168.1.100")
 

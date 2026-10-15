@@ -1,23 +1,23 @@
 ---
-name: xtdata
-description: xqshare 行情数据命令行工具，获取股票列表、K线、实时行情等
+name: miniqmt-xtdata
+description: miniqmt-share 行情数据命令行工具，获取股票列表、K线、实时行情等
 ---
 
-# xtdata - 行情数据工具
+# miniqmt-xtdata - 行情数据工具
 
 ## ⚠️ 重要约束
 
-**必须使用 `xtdata` 命令行工具，禁止直接调用 Python xtquant 库**
+**必须使用 `miniqmt-xtdata` 命令行工具，禁止直接调用 Python xtquant 库**
 
 | ✅ 正确做法 | ❌ 错误做法 |
 |------------|------------|
-| `xtdata get_full_tick --code-list "..."` | `from xtquant import xtdata` |
-| `xtdata get_market_data_ex --stock-list "..."` | `xtdata.get_market_data(...)` |
+| `miniqmt-xtdata get_full_tick --code-list "..."` | `from xtquant import xtdata` |
+| `miniqmt-xtdata get_market_data_ex --stock-list "..."` | `xtdata.get_market_data(...)` |
 
 **原因**：
 - xtquant 只能在 Windows 上运行
 - 本地环境（macOS/Linux）无法直接调用 xtquant
-- 必须通过 xqshare 的命令行工具远程调用
+- 必须通过 miniqmt-share 的命令行工具远程调用
 
 ## 使用场景
 
@@ -35,26 +35,26 @@ description: xqshare 行情数据命令行工具，获取股票列表、K线、�
 | 组件 | 要求 | 说明 |
 |------|------|------|
 | Windows 服务器 | 必需 | xtquant 只能运行在 Windows |
-| xqshare 服务端 | 必需运行 | 在 Windows 上启动远程服务 |
+| miniqmt-share 服务端 | 必需运行 | 在 Windows 上启动远程服务 |
 
 **本 skill 假设**：
 - Windows 上已配置好 xtquant 环境（含 miniQMT）
-- xqshare 服务端已启动并可访问
+- miniqmt-share 服务端已启动并可访问
 - 客户端环境变量已正确配置
 
 ## 客户端配置
 
-- 已安装 xqshare：`pip install xqshare`
+- 已安装 miniqmt-share：`cd /path/to/miniqmt-share && python -m pip install -e . （本地 fork，见 docs/MINIQMT_SHARE.md）`
 - 已配置环境变量（推荐）：
   ```bash
-  export XQSHARE_REMOTE_HOST="192.168.1.100"
-  export XQSHARE_CLIENT_SECRET="your-secret"
+  export MINIQMT_SHARE_REMOTE_HOST="192.168.1.100"
+  export MINIQMT_SHARE_CLIENT_SECRET="your-secret"
   ```
 
 ## 命令格式
 
 ```bash
-xtdata [全局参数] <command> [API参数]
+miniqmt-xtdata [全局参数] <command> [API参数]
 ```
 
 **参数规则**：全局参数在 command 之前，API 参数在 command 之后
@@ -63,11 +63,11 @@ xtdata [全局参数] <command> [API参数]
 
 | 参数 | 环境变量 | 说明 |
 |------|----------|------|
-| `--host` | XQSHARE_REMOTE_HOST | 服务端地址 |
-| `--port` | XQSHARE_REMOTE_PORT | 服务端端口 |
-| `--secret` | XQSHARE_CLIENT_SECRET | 认证密钥 |
-| `--client-id` | XQSHARE_CLIENT_ID | 客户端标识 |
-| `--format`, `-f` | XQSHARE_FORMAT | 输出格式: text/json/csv (默认: text) |
+| `--host` | MINIQMT_SHARE_REMOTE_HOST | 服务端地址 |
+| `--port` | MINIQMT_SHARE_REMOTE_PORT | 服务端端口 |
+| `--secret` | MINIQMT_SHARE_CLIENT_SECRET | 认证密钥 |
+| `--client-id` | MINIQMT_SHARE_CLIENT_ID | 客户端标识 |
+| `--format`, `-f` | MINIQMT_SHARE_FORMAT | 输出格式: text/json/csv (默认: text) |
 | `--compact` | - | 紧凑模式输出 (仅对 json 格式有效) |
 | `--limit`, `-n` | - | 列表输出限制（默认50，0表示不限制） |
 | `--output`, `-o` | - | 输出文件路径 |
@@ -76,39 +76,39 @@ xtdata [全局参数] <command> [API参数]
 **参数位置**：全局参数可放在 command 之前或之后，例如：
 ```bash
 # 两种写法都有效
-xtdata --format json --compact get_stock_list_in_sector --sector-name "沪深A股"
-xtdata get_stock_list_in_sector --sector-name "沪深A股" --format json --compact
+miniqmt-xtdata --format json --compact get_stock_list_in_sector --sector-name "沪深A股"
+miniqmt-xtdata get_stock_list_in_sector --sector-name "沪深A股" --format json --compact
 ```
 
 ## 常用命令
 
 ### 获取板块列表
 ```bash
-xtdata get_sector_list
+miniqmt-xtdata get_sector_list
 ```
 
 ### 获取股票列表
 ```bash
 # text 格式（默认）
-xtdata get_stock_list_in_sector --sector-name "沪深A股"
+miniqmt-xtdata get_stock_list_in_sector --sector-name "沪深A股"
 
 # json 格式
-xtdata -f json get_stock_list_in_sector --sector-name "沪深A股"
+miniqmt-xtdata -f json get_stock_list_in_sector --sector-name "沪深A股"
 
 # 紧凑 json 输出
-xtdata -f json --compact get_stock_list_in_sector --sector-name "沪深A股"
+miniqmt-xtdata -f json --compact get_stock_list_in_sector --sector-name "沪深A股"
 
 # 限制输出数量
-xtdata -n 100 get_stock_list_in_sector --sector-name "沪深300"
+miniqmt-xtdata -n 100 get_stock_list_in_sector --sector-name "沪深300"
 ```
 
 ### 获取股票详情
 ```bash
 # 获取股票基础信息
-xtdata get_instrument_detail --stock-code "000001.SZ"
+miniqmt-xtdata get_instrument_detail --stock-code "000001.SZ"
 
 # 获取分红除权因子
-xtdata get_divid_factors --stock-code "000001.SZ" --start-time "20240101" --end-time "20260101"
+miniqmt-xtdata get_divid_factors --stock-code "000001.SZ" --start-time "20240101" --end-time "20260101"
 ```
 
 ### 获取K线数据
@@ -116,40 +116,40 @@ xtdata get_divid_factors --stock-code "000001.SZ" --start-time "20240101" --end-
 **get_market_data** - 返回 `{字段: DataFrame}` 结构（按字段组织）：
 ```bash
 # 多只股票日K线
-xtdata get_market_data --stock-list "[\"000001.SZ\",\"600000.SH\"]" --period "1d" --start-time "20260101" --end-time "20260309"
+miniqmt-xtdata get_market_data --stock-list "[\"000001.SZ\",\"600000.SH\"]" --period "1d" --start-time "20260101" --end-time "20260309"
 
 # json 格式输出
-xtdata -f json --compact get_market_data --stock-list "[\"000001.SZ\"]" --period "1d" --start-time "20260101"
+miniqmt-xtdata -f json --compact get_market_data --stock-list "[\"000001.SZ\"]" --period "1d" --start-time "20260101"
 ```
 
 **get_market_data_ex** - 返回 `{股票: DataFrame}` 结构（按股票组织，推荐）：
 ```bash
 # 单只股票
-xtdata get_market_data_ex --stock-list "[\"000001.SZ\"]" --period "1d" --start-time "20260101" --end-time "20260309"
+miniqmt-xtdata get_market_data_ex --stock-list "[\"000001.SZ\"]" --period "1d" --start-time "20260101" --end-time "20260309"
 
 # 多只股票
-xtdata get_market_data_ex --stock-list "[\"000001.SZ\",\"600000.SH\",\"000002.SZ\"]" --period "1d" --start-time "20260101"
+miniqmt-xtdata get_market_data_ex --stock-list "[\"000001.SZ\",\"600000.SH\",\"000002.SZ\"]" --period "1d" --start-time "20260101"
 
 # 5分钟K线
-xtdata get_market_data_ex --stock-list "[\"000001.SZ\"]" --period "5m" --start-time "20260301" --end-time "20260309"
+miniqmt-xtdata get_market_data_ex --stock-list "[\"000001.SZ\"]" --period "5m" --start-time "20260301" --end-time "20260309"
 
 # 使用 count 参数（获取最近N条）
-xtdata get_market_data_ex --stock-list "[\"000001.SZ\"]" --period "1d" --count 10
+miniqmt-xtdata get_market_data_ex --stock-list "[\"000001.SZ\"]" --period "1d" --count 10
 
 # 前复权
-xtdata get_market_data_ex --stock-list "[\"000001.SZ\"]" --period "1d" --start-time "20260101" --dividend-type "front"
+miniqmt-xtdata get_market_data_ex --stock-list "[\"000001.SZ\"]" --period "1d" --start-time "20260101" --dividend-type "front"
 ```
 
 ### 获取实时行情（五档盘口）
 ```bash
 # 单只股票
-xtdata get_full_tick --code-list "[\"000001.SZ\"]"
+miniqmt-xtdata get_full_tick --code-list "[\"000001.SZ\"]"
 
 # 多只股票
-xtdata get_full_tick --code-list "[\"000001.SZ\",\"600000.SH\",\"000002.SZ\",\"600519.SH\"]"
+miniqmt-xtdata get_full_tick --code-list "[\"000001.SZ\",\"600000.SH\",\"000002.SZ\",\"600519.SH\"]"
 
 # json 格式
-xtdata -f json get_full_tick --code-list "[\"000001.SZ\",\"600000.SH\"]"
+miniqmt-xtdata -f json get_full_tick --code-list "[\"000001.SZ\",\"600000.SH\"]"
 ```
 
 ### 获取财务数据
@@ -157,26 +157,26 @@ xtdata -f json get_full_tick --code-list "[\"000001.SZ\",\"600000.SH\"]"
 **注意**：查询财务数据前，需先下载：
 ```bash
 # 下载财务数据
-xtdata download_financial_data2 --stock-list "[\"000001.SZ\"]" --table-list "[\"Balance\",\"Income\",\"CashFlow\"]"
+miniqmt-xtdata download_financial_data2 --stock-list "[\"000001.SZ\"]" --table-list "[\"Balance\",\"Income\",\"CashFlow\"]"
 
 # 查询财务数据
-xtdata get_financial_data --stock-list "[\"000001.SZ\"]" --table-list "[\"Balance\",\"Income\"]"
+miniqmt-xtdata get_financial_data --stock-list "[\"000001.SZ\"]" --table-list "[\"Balance\",\"Income\"]"
 ```
 
 ### 下载历史数据
 
 **单只股票下载**：
 ```bash
-xtdata download_history_data --stock-code "000001.SZ" --period "1d" --start-time "20250101" --end-time "20260309"
+miniqmt-xtdata download_history_data --stock-code "000001.SZ" --period "1d" --start-time "20250101" --end-time "20260309"
 ```
 
 **批量下载（推荐）**：
 ```bash
 # 下载多只股票日K线
-xtdata download_history_data2 --stock-list "[\"000001.SZ\",\"600000.SH\"]" --period "1d" --start-time "20250101" --end-time "20260309"
+miniqmt-xtdata download_history_data2 --stock-list "[\"000001.SZ\",\"600000.SH\"]" --period "1d" --start-time "20250101" --end-time "20260309"
 
 # 下载分钟线
-xtdata download_history_data2 --stock-list "[\"000001.SZ\"]" --period "5m" --start-time "20250101"
+miniqmt-xtdata download_history_data2 --stock-list "[\"000001.SZ\"]" --period "5m" --start-time "20250101"
 ```
 
 **下载命令对比**：
@@ -211,8 +211,8 @@ xtdata download_history_data2 --stock-list "[\"000001.SZ\"]" --period "5m" --sta
 
 **推荐流程**：
 ```
-1. 下载基础数据: xtdata download_history_data2 --stock-list "[\"000001.SZ\"]" --period "1d"
-2. 查询K线数据: xtdata get_market_data_ex --stock-list "[\"000001.SZ\"]" --period "1d" --start-time "20250101"
+1. 下载基础数据: miniqmt-xtdata download_history_data2 --stock-list "[\"000001.SZ\"]" --period "1d"
+2. 查询K线数据: miniqmt-xtdata get_market_data_ex --stock-list "[\"000001.SZ\"]" --period "1d" --start-time "20250101"
 ```
 
 **示例**：
@@ -220,10 +220,10 @@ xtdata download_history_data2 --stock-list "[\"000001.SZ\"]" --period "5m" --sta
 用户: 获取平安银行的日K线数据
 
 AI: 首次查询需要先下载数据...
-[执行] xtdata download_history_data2 --stock-list "[\"000001.SZ\"]" --period "1d"
+[执行] miniqmt-xtdata download_history_data2 --stock-list "[\"000001.SZ\"]" --period "1d"
 
 AI: 数据下载完成，现在获取K线数据...
-[执行] xtdata get_market_data_ex --stock-list "[\"000001.SZ\"]" --period "1d" --start-time "20250101"
+[执行] miniqmt-xtdata get_market_data_ex --stock-list "[\"000001.SZ\"]" --period "1d" --start-time "20250101"
 ```
 
 ## 限制
@@ -271,7 +271,7 @@ AI: 数据下载完成，现在获取K线数据...
 使用 Python API 时，可以在运行时开关日志：
 
 ```python
-from xqshare import connect, xtdata, disable_logging, enable_logging
+from miniqmt_share import connect, xtdata, disable_logging, enable_logging
 
 connect("192.168.1.100")
 
