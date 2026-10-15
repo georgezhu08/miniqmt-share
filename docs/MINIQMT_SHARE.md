@@ -67,6 +67,13 @@ python -m miniqmt_share.server --port 51812
 
 客户端默认 client id 为 `miniqmt-share-client`；secret 无默认值，必须通过 `--secret` 或 `MINIQMT_SHARE_CLIENT_SECRET` 提供。
 
+### 密钥管理
+
+- **生成**：使用密码学随机源，例如 `python -c "import secrets; print(secrets.token_urlsafe(24))"`；禁止使用弱口令或示例中的占位值
+- **存放**：`miniqmt-share.clients.yaml` 含密钥，必须保持 untracked（勿提交 git），文件权限仅限服务运行账户可读
+- **轮换**：直接编辑服务端运行目录的 `miniqmt-share.clients.yaml` 即可，服务端每 5 分钟检测文件变更并自动热重载，**无需重启**；轮换后同步更新客户端 `.env` / `MINIQMT_SHARE_CLIENT_SECRET`
+- **撤销**：删除对应 client 条目（热重载后该客户端的新连接被拒绝，已建立的旧连接在断开重连时失效）；彻底封禁需重启服务端
+
 ## 日志
 
 默认日志目录 `logs/miniqmt_share/`（upstream 为 `logs/`），含 `server.log`、`api_calls.log`、`client_YYYYMMDD.log`。可用 `MINIQMT_SHARE_LOG_DIR`、`MINIQMT_SHARE_LOG_RETENTION` 覆盖。
@@ -131,6 +138,65 @@ rg -n --hidden --glob '!.git/**' 'from xqshare|import xqshare|XQSHARE_|xqshare-s
 ```
 
 （`README.md`、LICENSE、upstream remote 中的 `xqshare` 为 approved upstream references，不需替换。）
+
+## Windows 服务器部署与升级
+
+服务端需运行在装有 xtquant 的 Windows 上。推荐部署为 git 仓库，便于升级与版本审计：
+
+### 首次部署
+
+```bat
+cd C:\Users\<user>
+git clone https://github.com/georgezhu08/miniqmt-share.git
+cd miniqmt-share
+python -m pip install -e .
+:: 创建认证配置（见"密钥管理"）
+copy miniqmt-share.clients.yaml.example miniqmt-share.clients.yaml
+```
+
+若服务器无法直连 GitHub（连接被重置），用 git bundle 离线同步：
+
+```bash
+# 本地
+git bundle create miniqmt-share.bundle main
+scp miniqmt-share.bundle <user>@<server>:C:/Users/<user>/
+```
+
+```bat
+:: 服务器
+cd C:\Users\<user>\miniqmt-share
+git init
+git fetch C:\Users\<user>\miniqmt-share.bundle main
+git checkout -f -B main FETCH_HEAD
+```
+
+### 日常升级
+
+```bat
+cd C:\Users\<user>\miniqmt-share
+git pull                     :: 或 bundle 方式：git fetch <bundle> main && git checkout -f main
+python -m pip install -e . --no-deps   :: 刷新 egg-info 版本元数据
+```
+
+然后重启服务（见下）。升级前建议 `git log --oneline -5` 确认版本，升级后 `python -c "import importlib.metadata as m; print(m.version('miniqmt-share'))"` 验证。
+
+### 启动/重启服务
+
+通过 `wmic process call create` 启动可脱离 SSH 会话存活：
+
+```bat
+wmic process call create "cmd /c cd /d C:\Users\<user>\miniqmt-share && python -m miniqmt_share.server --host 0.0.0.0 --port 51812 > server-stdout.log 2>&1"
+```
+
+重启流程：`netstat -ano | findstr 51812` 找到 PID → `taskkill /pid <PID> /f` → 重新启动。
+
+验收：`netstat -ano | findstr 51812` 出现 LISTENING；`logs\miniqmt_share\server.log` 出现"有效账号数量"；客户端机器跑 `pytest tests/test_integration.py -m integration`（需设置 `MINIQMT_SHARE_REMOTE_HOST` 等环境变量）。
+
+### 部署注意事项
+
+- 认证配置 `miniqmt-share.clients.yaml` 为 untracked，`git checkout -f` 不会覆盖它；同样不受影响的还有 `.env`、`logs/`
+- 默认端口 `51812` 与 upstream xqshare 的 `18812` 可同机并存，互不影响
+- 旧客户端脚本若硬编码 `18812`/旧密钥，升级服务端后需同步更新
 
 ## Migration Notes
 
