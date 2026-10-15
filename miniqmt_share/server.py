@@ -7,6 +7,7 @@ from rpyc.utils.server import ThreadedServer
 import time
 import os
 import ssl
+import sys
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import functools
@@ -19,6 +20,7 @@ from typing import Any, Dict, Optional
 from .auth import (
     PermissionChecker,
     PermissionError,
+    AuthConfigError,
     AccountLevel,
     Permission,
     get_permission_checker,
@@ -93,7 +95,7 @@ def setup_logging(log_dir: str = None, log_level: str = "INFO", log_retention: i
                        大于 0 时，每日轮转并自动删除超过天数的旧日志
     """
     if log_dir is None:
-        log_dir = os.environ.get("MINIQMT_SHARE_LOG_DIR", "logs")
+        log_dir = os.environ.get("MINIQMT_SHARE_LOG_DIR", os.path.join("logs", "miniqmt_share"))
     os.makedirs(log_dir, exist_ok=True)
 
     formatter = logging.Formatter(
@@ -112,7 +114,7 @@ def setup_logging(log_dir: str = None, log_level: str = "INFO", log_retention: i
 
     # 主日志：每日轮转
     file_handler = _make_rotating_handler(
-        os.path.join(log_dir, "xtquant_service.log"),
+        os.path.join(log_dir, "server.log"),
         backup_count=log_retention
     )
     file_handler.setFormatter(formatter)
@@ -125,7 +127,7 @@ def setup_logging(log_dir: str = None, log_level: str = "INFO", log_retention: i
         backup_count=log_retention
     )
     api_handler.setFormatter(formatter)
-    api_logger = logging.getLogger('api')
+    api_logger = logging.getLogger('miniqmt_share.api')
     api_logger.addHandler(api_handler)
     api_logger.setLevel(logging.DEBUG)
 
@@ -139,7 +141,7 @@ api_logger = None
 def _init_logging(log_level="INFO", log_retention: int = 0):
     global logger, api_logger
     logger = setup_logging(log_level=log_level, log_retention=log_retention)
-    api_logger = logging.getLogger('api')
+    api_logger = logging.getLogger('miniqmt_share.api')
 
 
 _server_logging_enabled = True
@@ -785,7 +787,7 @@ def start_server(host="0.0.0.0", port=None, use_ssl=False, certfile=None, keyfil
         pass
 
     if port is None:
-        port = int(os.environ.get("MINIQMT_SHARE_PORT", "18812"))
+        port = int(os.environ.get("MINIQMT_SHARE_PORT", "51812"))
 
     if log_retention is None:
         log_retention = int(os.environ.get("MINIQMT_SHARE_LOG_RETENTION", "0"))
@@ -806,9 +808,14 @@ def start_server(host="0.0.0.0", port=None, use_ssl=False, certfile=None, keyfil
     print(f"  日志保留: {'不限制' if log_retention == 0 else f'{log_retention} 天'}")
     print("=" * 70)
     
-    # 预加载权限检查器（加载 clients.yaml 配置）
+    # 预加载权限检查器（fail-closed：认证配置缺失/无效时拒绝启动）
     if XtQuantService._permission_checker is None:
-        XtQuantService._permission_checker = get_permission_checker()
+        try:
+            XtQuantService._permission_checker = get_permission_checker()
+        except AuthConfigError as e:
+            print(f"错误: {e}", file=sys.stderr)
+            logger.error(f"认证配置无效，服务拒绝启动: {e}")
+            return
 
     logger.info(f"服务启动 | host={host} | port={port} | ssl={use_ssl}")
     
@@ -891,12 +898,13 @@ def main():
   miniqmt-share-server --ssl --cert cert.pem --key key.pem  # 启用 SSL
 
 环境变量:
-  MINIQMT_SHARE_PORT      服务端口 (默认: 18812)
-  QMT_USERDATA_PATH QMT userdata_mini 目录路径
+  MINIQMT_SHARE_PORT          服务端口 (默认: 51812)
+  MINIQMT_SHARE_CLIENTS_FILE  认证配置文件路径 (默认: ./miniqmt-share.clients.yaml)
+  QMT_USERDATA_PATH           QMT userdata_mini 目录路径
         """
     )
     parser.add_argument("--host", default="0.0.0.0", help="监听地址 (默认: 0.0.0.0)")
-    parser.add_argument("--port", type=int, default=None, help="监听端口 (默认: 18812 或 MINIQMT_SHARE_PORT)")
+    parser.add_argument("--port", type=int, default=None, help="监听端口 (默认: 51812 或 MINIQMT_SHARE_PORT)")
     parser.add_argument("--ssl", action="store_true", help="启用 SSL 加密")
     parser.add_argument("--cert", help="SSL 证书文件")
     parser.add_argument("--key", help="SSL 私钥文件")

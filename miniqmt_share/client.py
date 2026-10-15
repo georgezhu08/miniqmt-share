@@ -12,9 +12,9 @@ import json
 from typing import Any, Callable, Dict, List
 from datetime import datetime
 
-# 默认客户端配置（与服务端保持一致）
-DEFAULT_CLIENT_ID = "client-standard"
-DEFAULT_CLIENT_SECRET = "xqshare-default-secret"
+# 默认客户端 ID（与服务端配置中的客户端对应）
+# 注意：没有默认 secret，必须通过参数或 MINIQMT_SHARE_CLIENT_SECRET 提供
+DEFAULT_CLIENT_ID = "miniqmt-share-client"
 
 
 # ==================== 日志配置 ====================
@@ -26,8 +26,8 @@ def setup_logging(log_level: str = "INFO", quiet: bool = False):
         log_level: 日志级别
         quiet: 是否静默模式（不输出控制台日志）
     """
-    # 日志目录：优先使用环境变量，默认为工作目录的 logs
-    log_dir = os.environ.get("MINIQMT_SHARE_LOG_DIR", "logs")
+    # 日志目录：优先使用环境变量，默认 logs/miniqmt_share
+    log_dir = os.environ.get("MINIQMT_SHARE_LOG_DIR", os.path.join("logs", "miniqmt_share"))
     os.makedirs(log_dir, exist_ok=True)
 
     formatter = logging.Formatter(
@@ -35,7 +35,7 @@ def setup_logging(log_level: str = "INFO", quiet: bool = False):
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
-    root_logger = logging.getLogger('xtquant_client')
+    root_logger = logging.getLogger('miniqmt_share.client')
     root_logger.setLevel(getattr(logging, log_level.upper()))
 
     # 静默模式下不添加控制台 handler
@@ -378,11 +378,11 @@ class XtQuantRemote:
         if host is None:
             host = os.environ.get("MINIQMT_SHARE_REMOTE_HOST", "localhost")
         if port is None:
-            port = int(os.environ.get("MINIQMT_SHARE_REMOTE_PORT", "18812"))
+            port = int(os.environ.get("MINIQMT_SHARE_REMOTE_PORT", "51812"))
         if client_id is None:
             client_id = os.environ.get("MINIQMT_SHARE_CLIENT_ID", DEFAULT_CLIENT_ID)
         if client_secret is None:
-            client_secret = os.environ.get("MINIQMT_SHARE_CLIENT_SECRET", DEFAULT_CLIENT_SECRET)
+            client_secret = os.environ.get("MINIQMT_SHARE_CLIENT_SECRET")
 
         self._host = host
         self._port = port
@@ -701,7 +701,7 @@ def connect(host=None, port=None, **kwargs):
     if host is None:
         host = os.environ.get("MINIQMT_SHARE_REMOTE_HOST", "localhost")
     if port is None:
-        port = int(os.environ.get("MINIQMT_SHARE_REMOTE_PORT", "18812"))
+        port = int(os.environ.get("MINIQMT_SHARE_REMOTE_PORT", "51812"))
     _global_client = XtQuantRemote(host, port, **kwargs)
     return _global_client
 

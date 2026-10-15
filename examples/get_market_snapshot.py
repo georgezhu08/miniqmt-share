@@ -49,7 +49,7 @@ def main():
         """
     )
     parser.add_argument("--host", help="服务端地址 (默认: 环境变量 MINIQMT_SHARE_REMOTE_HOST 或 localhost)")
-    parser.add_argument("--port", type=int, help="服务端端口 (默认: 环境变量 MINIQMT_SHARE_REMOTE_PORT 或 18812)")
+    parser.add_argument("--port", type=int, help="服务端端口 (默认: 环境变量 MINIQMT_SHARE_REMOTE_PORT 或 51812)")
     parser.add_argument("--secret", help="认证密钥 (默认: 环境变量 MINIQMT_SHARE_CLIENT_SECRET)")
     parser.add_argument("--top", type=int, default=20, help="输出条数 (默认: 20)")
     parser.add_argument("--sort", choices=['desc', 'asc'], default='desc',

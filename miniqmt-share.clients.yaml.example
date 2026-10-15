@@ -1,7 +1,7 @@
 # miniqmt-share 客户端配置示例
 #
-# 复制此文件为 clients.yaml 并修改配置
-# cp clients.yaml.example clients.yaml
+# 复制此文件为 miniqmt-share.clients.yaml 并修改配置
+# cp miniqmt-share.clients.yaml.example miniqmt-share.clients.yaml
 #
 # 配置说明：
 # - secret: 客户端认证密钥

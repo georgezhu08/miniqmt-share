@@ -33,9 +33,9 @@ def create_client(host=None, port=None, secret=None, client_id=None, quiet=True)
     from miniqmt_share import XtQuantRemote
 
     h = host or os.environ.get(ENV_HOST, "localhost")
-    p = port or int(os.environ.get(ENV_PORT, "18812"))
+    p = port or int(os.environ.get(ENV_PORT, "51812"))
     s = secret or os.environ.get(ENV_SECRET)
-    cid = client_id or os.environ.get(ENV_CLIENT_ID, "client-standard")
+    cid = client_id or os.environ.get(ENV_CLIENT_ID, "miniqmt-share-client")
 
     xt = XtQuantRemote(host=h, port=p, client_id=cid, client_secret=s)
     try:

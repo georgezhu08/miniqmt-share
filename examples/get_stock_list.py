@@ -37,7 +37,7 @@ def main():
         """
     )
     parser.add_argument("--host", help="服务端地址 (默认: 环境变量 MINIQMT_SHARE_REMOTE_HOST 或 localhost)")
-    parser.add_argument("--port", type=int, help="服务端端口 (默认: 环境变量 MINIQMT_SHARE_REMOTE_PORT 或 18812)")
+    parser.add_argument("--port", type=int, help="服务端端口 (默认: 环境变量 MINIQMT_SHARE_REMOTE_PORT 或 51812)")
     parser.add_argument("--secret", help="认证密钥 (默认: 环境变量 MINIQMT_SHARE_CLIENT_SECRET)")
     parser.add_argument("--sector", default="沪深A股", help="板块名称 (默认: 沪深A股)")
 
@@ -46,7 +46,7 @@ def main():
     # 连接服务端（支持环境变量）
     # 获取实际使用的值用于显示
     host_display = args.host or os.environ.get("MINIQMT_SHARE_REMOTE_HOST", "localhost")
-    port_display = args.port or int(os.environ.get("MINIQMT_SHARE_REMOTE_PORT", "18812"))
+    port_display = args.port or int(os.environ.get("MINIQMT_SHARE_REMOTE_PORT", "51812"))
     print(f"正在连接 {host_display}:{port_display}...")
 
     # 创建连接（参数为 None 时自动读取环境变量）

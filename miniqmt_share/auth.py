@@ -130,9 +130,16 @@ DAILY_PERIODS = {"1d", "1w", "1mon", "1q", "1hy", "1y"}
 # Tick 周期（包含分笔和1分钟线）
 TICK_PERIODS = {"tick", "1m"}
 
-# 默认客户端配置（当配置文件不存在时使用）
-DEFAULT_CLIENT_ID = "client-standard"
-DEFAULT_CLIENT_SECRET = "xqshare-default-secret"
+# 认证配置文件默认名（可用 MINIQMT_SHARE_CLIENTS_FILE 覆盖）
+DEFAULT_CLIENTS_FILENAME = "miniqmt-share.clients.yaml"
+ENV_CLIENTS_FILE = "MINIQMT_SHARE_CLIENTS_FILE"
+
+# 默认客户端 ID（客户端侧默认身份；服务端不再提供公开默认 secret）
+DEFAULT_CLIENT_ID = "miniqmt-share-client"
+
+
+class AuthConfigError(Exception):
+    """认证配置错误（配置缺失或无法加载时由服务端 fail-closed 使用）"""
 
 
 class PermissionError(Exception):
@@ -175,27 +182,35 @@ class PermissionChecker:
         初始化权限检查器
 
         Args:
-            config_path: 配置文件路径，默认为 ./clients.yaml（当前工作目录）
+            config_path: 配置文件路径，默认 ./miniqmt-share.clients.yaml，
+                         可通过 MINIQMT_SHARE_CLIENTS_FILE 环境变量覆盖
+
+        Raises:
+            AuthConfigError: 配置文件缺失、为空或加载失败（fail-closed，
+                             不再回退到任何公开默认 secret）
         """
         if config_path is None:
-            config_path = os.path.join(os.getcwd(), "clients.yaml")
+            config_path = os.environ.get(
+                ENV_CLIENTS_FILE,
+                os.path.join(os.getcwd(), DEFAULT_CLIENTS_FILENAME),
+            )
         self.config_path = config_path
         self._clients: Dict[str, ClientConfig] = {}
-        self._use_default_client = False  # 标记是否使用默认客户端
-        # 配置文件热更新相关属性
         self._last_mtime: float = 0  # 文件最后修改时间
         self._last_check_time: float = 0  # 上次检查时间
         self._check_interval: int = 300  # 检查间隔 5 分钟
         self._load_config()
 
     def _load_config(self) -> None:
-        """加载配置文件"""
+        """加载配置文件（缺失/空配置/解析失败均抛出 AuthConfigError）"""
         config_file = Path(self.config_path)
 
         if not config_file.exists():
-            # 配置文件不存在，使用默认客户端
-            self._create_default_client()
-            return
+            raise AuthConfigError(
+                f"认证配置文件不存在: {self.config_path}\n"
+                f"请复制 miniqmt-share.clients.yaml.example 为 miniqmt-share.clients.yaml "
+                f"并配置客户端密钥，或通过 MINIQMT_SHARE_CLIENTS_FILE 指定路径。"
+            )
 
         # 记录文件修改时间
         self._last_mtime = config_file.stat().st_mtime
@@ -209,27 +224,17 @@ class PermissionChecker:
                     if isinstance(client_data, dict):
                         self._clients[client_id] = ClientConfig.from_dict(client_data)
 
-            # 如果配置为空，使用默认客户端
             if not self._clients:
-                self._create_default_client()
-            else:
-                import logging
-                logging.info(f"[配置加载] 有效账号数量: {len(self._clients)}")
-        except Exception as e:
-            # 配置加载失败，使用默认客户端
-            import logging
-            logging.warning(f"加载客户端配置失败: {e}，使用默认客户端")
-            self._create_default_client()
+                raise AuthConfigError(
+                    f"认证配置文件中没有有效客户端: {self.config_path}"
+                )
 
-    def _create_default_client(self) -> None:
-        """创建默认客户端配置"""
-        self._use_default_client = True
-        self._clients[DEFAULT_CLIENT_ID] = ClientConfig(
-            secret=DEFAULT_CLIENT_SECRET,
-            level=AccountLevel.STANDARD
-        )
-        import logging
-        logging.warning(f"[配置加载] 未找到 clients.yaml，启用默认账号: {DEFAULT_CLIENT_ID} (level=standard)")
+            import logging
+            logging.info(f"[配置加载] 有效账号数量: {len(self._clients)}")
+        except AuthConfigError:
+            raise
+        except Exception as e:
+            raise AuthConfigError(f"加载认证配置失败: {self.config_path}: {e}")
 
     def check_and_reload_if_changed(self) -> bool:
         """
@@ -260,10 +265,12 @@ class PermissionChecker:
                 logging.info(f"检测到配置文件变更，重新加载: {self.config_path}")
                 # 重置状态
                 self._clients = {}
-                self._use_default_client = False
                 # 重新加载
                 self._load_config()
                 return True
+        except AuthConfigError:
+            import logging
+            logging.warning(f"配置文件变更后重新加载失败，保留原有配置: {self.config_path}")
         except Exception as e:
             import logging
             logging.warning(f"检查配置文件变更失败: {e}")
@@ -288,7 +295,7 @@ class PermissionChecker:
         if client_id in self._clients:
             return self._clients[client_id]
 
-        # 尝试从环境变量获取
+        # 尝试从环境变量获取（每个客户端独立环境变量，等级 FREE）
         secret = os.environ.get(f"MINIQMT_SHARE_CLIENT_{client_id}")
         if secret:
             return ClientConfig(secret=secret, level=AccountLevel.FREE)
@@ -309,14 +316,7 @@ class PermissionChecker:
         config = self.get_client_config(client_id)
 
         if config is None:
-            # 未在配置中找到
-            if self._use_default_client:
-                # 使用默认客户端模式，拒绝未知客户端
-                return False, None
-            # 非默认模式，尝试使用环境变量中的默认密钥
-            default_secret = os.environ.get("MINIQMT_SHARE_CLIENT_SECRET", "default-secret")
-            if client_secret == default_secret:
-                return True, AccountLevel.FREE
+            # 未在配置或环境变量中找到该客户端
             return False, None
 
         if config.secret == client_secret:
@@ -453,7 +453,11 @@ _permission_checker: Optional[PermissionChecker] = None
 
 
 def get_permission_checker(config_path: Optional[str] = None) -> PermissionChecker:
-    """获取全局权限检查器实例"""
+    """获取全局权限检查器实例
+
+    Raises:
+        AuthConfigError: 认证配置缺失或无效（fail-closed）
+    """
     global _permission_checker
     if _permission_checker is None or config_path is not None:
         _permission_checker = PermissionChecker(config_path)

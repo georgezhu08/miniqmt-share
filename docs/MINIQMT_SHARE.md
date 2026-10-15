@@ -17,6 +17,9 @@
 | 交易 CLI | `miniqmt-xttrader` | `xttrader` |
 | 环境变量前缀 | `MINIQMT_SHARE_*` | `XQSHARE_*` |
 | QMT 本身变量 | `QMT_*`（不变） | `QMT_*`（不变） |
+| 默认端口 | `51812` | `18812` |
+| 认证配置文件 | `miniqmt-share.clients.yaml` | `clients.yaml` |
+| 日志目录 | `logs/miniqmt_share/` | `logs/` |
 
 ## 安装
 
@@ -47,8 +50,26 @@ connect("192.168.1.100")
 服务端（Windows）：
 
 ```bash
-python -m miniqmt_share.server --port 18812
+python -m miniqmt_share.server --port 51812
 ```
+
+服务端默认监听 `51812`（upstream 为 `18812`，避免同机冲突/误连）。显式 `--port` 或 `MINIQMT_SHARE_PORT` 优先级更高。
+
+## 认证（fail-closed）
+
+服务端启动时必须存在有效认证配置，否则**拒绝启动**（不提供任何公开默认 secret）：
+
+1. 复制示例配置：`cp miniqmt-share.clients.yaml.example miniqmt-share.clients.yaml`
+2. 为每个客户端设置强密钥
+3. 服务端目录启动：`miniqmt-share-server`
+
+配置文件查找优先级：显式参数 > `MINIQMT_SHARE_CLIENTS_FILE` > `./miniqmt-share.clients.yaml`。
+
+客户端默认 client id 为 `miniqmt-share-client`；secret 无默认值，必须通过 `--secret` 或 `MINIQMT_SHARE_CLIENT_SECRET` 提供。
+
+## 日志
+
+默认日志目录 `logs/miniqmt_share/`（upstream 为 `logs/`），含 `server.log`、`api_calls.log`、`client_YYYYMMDD.log`。可用 `MINIQMT_SHARE_LOG_DIR`、`MINIQMT_SHARE_LOG_RETENTION` 覆盖。
 
 ## CLI
 
@@ -74,6 +95,7 @@ miniqmt-xttrader query_stock_positions
 | `XQSHARE_LOG_DIR` | `MINIQMT_SHARE_LOG_DIR` |
 | `XQSHARE_LOG_RETENTION` | `MINIQMT_SHARE_LOG_RETENTION` |
 | `XQSHARE_RUN_INTEGRATION` | `MINIQMT_SHARE_RUN_INTEGRATION` |
+| （upstream 无） | `MINIQMT_SHARE_CLIENTS_FILE` |
 
 无 fallback：本 fork 不读取旧 `XQSHARE_*` 变量，请同步更新 `.env` 文件。`QMT_*`（如 `QMT_ACCOUNT_ID`、`QMT_USERDATA_PATH`）属于 QMT 本身命名空间，保持不变。
 
@@ -85,7 +107,7 @@ miniqmt-xttrader query_stock_positions
 - CLI 隔离：本 fork 只提供 `miniqmt-*` 命令，官方 `xtdata`/`xttrader`/`xqshare-server` 由官方包提供，无竞争；
 - 配置隔离：互不读取对方环境变量。
 
-注意：RPC 协议序列化标记 `__xqshare_serialized__` 与默认客户端密钥 `xqshare-default-secret` 为历史兼容值，client/server 两侧一致即可，不影响与官方包的命名空间隔离。
+注意：RPC 协议序列化标记 `__xqshare_serialized__` 为 wire protocol 标识，client/server 两侧一致即可，为保持协议兼容有意保留，不影响与官方包的命名空间隔离。
 
 ## Upstream 同步原则
 
@@ -113,4 +135,10 @@ rg -n --hidden --glob '!.git/**' 'from xqshare|import xqshare|XQSHARE_|xqshare-s
 ## Migration Notes
 
 - v1.1.3+miniqmt.1：完成从 upstream `xqshare` 的完整命名空间迁移；旧 `XQSHARE_*` 环境变量不再被读取，升级前请更新部署的 `.env` 与启动脚本。
+- v1.1.3+miniqmt.2（运行身份隔离）：
+  - 默认端口 `18812` → `51812`（服务端/客户端/CLI/示例统一）；
+  - 认证 fail-closed：移除公开默认 secret（`xqshare-default-secret`）与默认客户端 `client-standard`，配置缺失时服务端拒绝启动；
+  - 认证配置文件 `clients.yaml` → `miniqmt-share.clients.yaml`，可用 `MINIQMT_SHARE_CLIENTS_FILE` 覆盖；
+  - 日志目录 `logs/` → `logs/miniqmt_share/`，主日志更名为 `server.log`，logger 改为 `miniqmt_share.api` / `miniqmt_share.client`；
+  - `pyproject.toml` 的 distribution readme 指向本文档（`README.md` 保持 upstream 原样）。
 - upstream `README.md` 中的 `pip install xqshare`、`xtdata` 等内容描述的是 upstream 项目，保留原样。

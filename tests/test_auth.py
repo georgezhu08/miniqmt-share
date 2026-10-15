@@ -16,10 +16,13 @@ from miniqmt_share.auth import (
     DAILY_PERIODS,
     TICK_PERIODS,
     PermissionError,
+    AuthConfigError,
     ClientConfig,
     PermissionChecker,
     get_permission_checker,
     reset_permission_checker,
+    DEFAULT_CLIENTS_FILENAME,
+    ENV_CLIENTS_FILE,
 )
 
 
@@ -180,21 +183,44 @@ class TestPermissionChecker:
     """测试权限检查器"""
 
     def test_init_default_path(self):
-        """测试默认路径初始化"""
+        """测试默认路径初始化（当前目录无配置文件时 fail-closed）"""
+        with pytest.raises(AuthConfigError):
+            PermissionChecker()
+
+    def test_init_default_path_from_env(self, tmp_path, monkeypatch):
+        """测试 MINIQMT_SHARE_CLIENTS_FILE 覆盖默认路径"""
+        config = tmp_path / "my-clients.yaml"
+        config.write_text("clients:\n  app1:\n    secret: s1\n    level: free\n", encoding="utf-8")
+        monkeypatch.setenv(ENV_CLIENTS_FILE, str(config))
         checker = PermissionChecker()
-        assert checker.config_path.endswith("clients.yaml")
+        assert checker.config_path == str(config)
+        assert "app1" in checker._clients
 
-    def test_init_custom_path(self):
+    def test_init_custom_path(self, tmp_path):
         """测试自定义路径初始化"""
-        checker = PermissionChecker("/custom/path/config.yaml")
-        assert checker.config_path == "/custom/path/config.yaml"
+        config = tmp_path / "custom-config.yaml"
+        config.write_text("clients:\n  app1:\n    secret: s\n    level: free\n", encoding="utf-8")
+        checker = PermissionChecker(str(config))
+        assert checker.config_path == str(config)
 
-    def test_load_config_file_not_exists(self):
-        """测试配置文件不存在时创建默认客户端"""
-        checker = PermissionChecker("/nonexistent/path/config.yaml")
-        assert checker._use_default_client is True
-        assert "client-standard" in checker._clients
-        assert checker._clients["client-standard"].level == AccountLevel.STANDARD
+    def test_load_config_file_not_exists_fail_closed(self):
+        """测试配置文件不存在时 fail-closed，不创建默认客户端"""
+        with pytest.raises(AuthConfigError, match="不存在"):
+            PermissionChecker("/nonexistent/path/config.yaml")
+
+    def test_load_config_empty_fail_closed(self, tmp_path):
+        """测试空配置 fail-closed"""
+        config = tmp_path / DEFAULT_CLIENTS_FILENAME
+        config.write_text("clients:\n", encoding="utf-8")
+        with pytest.raises(AuthConfigError):
+            PermissionChecker(str(config))
+
+    def test_load_config_invalid_yaml_fail_closed(self, tmp_path):
+        """测试配置解析失败 fail-closed，不回退到固定 secret"""
+        config = tmp_path / DEFAULT_CLIENTS_FILENAME
+        config.write_text("clients: [unclosed", encoding="utf-8")
+        with pytest.raises(AuthConfigError, match="加载认证配置失败"):
+            PermissionChecker(str(config))
 
     def test_load_config_from_file(self):
         """测试从文件加载配置"""
@@ -248,35 +274,38 @@ clients:
             f.flush()
             checker = PermissionChecker(f.name)
 
-            # 环境变量中的客户端不在配置文件中，使用默认密钥
-            with patch.dict(os.environ, {"MINIQMT_SHARE_CLIENT_SECRET": "env-default-secret"}):
-                valid, level = checker.verify_secret("env-user", "env-default-secret")
+            # 环境变量中定义的客户端（MINIQMT_SHARE_CLIENT_<id>）等级为 FREE
+            with patch.dict(os.environ, {"MINIQMT_SHARE_CLIENT_env-user": "env-secret"}):
+                valid, level = checker.verify_secret("env-user", "env-secret")
                 assert valid is True
                 assert level == AccountLevel.FREE
 
-    def test_verify_secret_default_client(self):
-        """测试默认客户端验证"""
-        # 配置文件不存在，使用默认客户端
-        checker = PermissionChecker("/nonexistent/path/config.yaml")
+                valid, level = checker.verify_secret("env-user", "wrong-secret")
+                assert valid is False
 
-        # 默认客户端验证成功
-        valid, level = checker.verify_secret("client-standard", "xqshare-default-secret")
-        assert valid is True
-        assert level == AccountLevel.STANDARD
+    def test_verify_secret_unknown_client_rejected(self):
+        """测试未知客户端被拒绝（无公开默认 secret 回退）"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write("""
+clients:
+  app1:
+    secret: "secret-app1"
+    level: standard
+""")
+            f.flush()
+            checker = PermissionChecker(f.name)
 
-        # 默认客户端密钥错误
-        valid, level = checker.verify_secret("client-standard", "wrong-secret")
-        assert valid is False
-        assert level is None
+            # 未知客户端：任何 secret（包括历史公开默认值）都必须被拒绝
+            for leaked in ("xqshare-default-secret", "default-secret", "any-secret"):
+                valid, level = checker.verify_secret("client-standard", leaked)
+                assert valid is False
+                assert level is None
 
-        # 未知客户端被拒绝（默认客户端模式）
-        valid, level = checker.verify_secret("unknown-client", "any-secret")
-        assert valid is False
-        assert level is None
-
-    def test_has_permission(self):
+    def test_has_permission(self, tmp_path):
         """测试权限检查"""
-        checker = PermissionChecker()
+        config = tmp_path / DEFAULT_CLIENTS_FILENAME
+        config.write_text("clients:\n  app1:\n    secret: s\n    level: free\n", encoding="utf-8")
+        checker = PermissionChecker(str(config))
 
         # FREE 用户
         assert checker.has_permission(AccountLevel.FREE, Permission.BASIC) is True
@@ -306,10 +335,21 @@ clients:
 class TestAPIDynamicPermission:
     """测试 API 动态权限检测"""
 
-    def setup_method(self):
-        """每个测试前重置权限检查器"""
+    def setup_class(self):
+        """类级别创建临时配置，check_api_permission 不依赖配置内容"""
+        import tempfile, os
         reset_permission_checker()
-        self.checker = PermissionChecker()
+        fd, path = tempfile.mkstemp(suffix=".yaml")
+        with os.fdopen(fd, "w") as f:
+            f.write("clients:\n  app1:\n    secret: s\n    level: free\n")
+        self._config_path = path
+        self.checker = PermissionChecker(path)
+
+    def teardown_class(self):
+        import os
+        reset_permission_checker()
+        if getattr(self, "_config_path", None):
+            os.unlink(self._config_path)
 
     def test_basic_api_permission(self):
         """测试 basic 权限 API"""
@@ -549,16 +589,20 @@ class TestGlobalPermissionChecker:
         """每个测试前重置"""
         reset_permission_checker()
 
-    def test_get_permission_checker_singleton(self):
+    def test_get_permission_checker_singleton(self, tmp_path):
         """测试单例模式"""
-        checker1 = get_permission_checker()
+        config = tmp_path / DEFAULT_CLIENTS_FILENAME
+        config.write_text("clients:\n  app1:\n    secret: s\n    level: free\n", encoding="utf-8")
+        checker1 = get_permission_checker(str(config))
         checker2 = get_permission_checker()
         assert checker1 is checker2
 
-    def test_get_permission_checker_with_path(self):
+    def test_get_permission_checker_with_path(self, tmp_path):
         """测试带路径获取"""
-        checker = get_permission_checker("/custom/path.yaml")
-        assert checker.config_path == "/custom/path.yaml"
+        config = tmp_path / "clients.yaml"
+        config.write_text("clients:\n  app1:\n    secret: s\n    level: free\n", encoding="utf-8")
+        checker = get_permission_checker(str(config))
+        assert checker.config_path == str(config)
 
 
 if __name__ == "__main__":

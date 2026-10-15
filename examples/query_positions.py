@@ -218,7 +218,7 @@ def main():
         """
     )
     parser.add_argument("--host", help="服务端地址 (默认: 环境变量 MINIQMT_SHARE_REMOTE_HOST 或 localhost)")
-    parser.add_argument("--port", type=int, help="服务端端口 (默认: 环境变量 MINIQMT_SHARE_REMOTE_PORT 或 18812)")
+    parser.add_argument("--port", type=int, help="服务端端口 (默认: 环境变量 MINIQMT_SHARE_REMOTE_PORT 或 51812)")
     parser.add_argument("--secret", help="认证密钥 (默认: 环境变量 MINIQMT_SHARE_CLIENT_SECRET)")
     parser.add_argument("--account-id", help="资金账号 (默认: 环境变量 QMT_ACCOUNT_ID)")
     parser.add_argument("--account-type", default="STOCK",
@@ -248,7 +248,7 @@ def main():
     # 连接服务端（支持环境变量）
     trader = None
     host_display = args.host or os.environ.get("MINIQMT_SHARE_REMOTE_HOST", "localhost")
-    port_display = args.port or int(os.environ.get("MINIQMT_SHARE_REMOTE_PORT", "18812"))
+    port_display = args.port or int(os.environ.get("MINIQMT_SHARE_REMOTE_PORT", "51812"))
     print(f"正在连接 {host_display}:{port_display}...")
     xt = XtQuantRemote(
         host=args.host,

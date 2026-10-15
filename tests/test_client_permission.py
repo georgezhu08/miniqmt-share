@@ -43,13 +43,13 @@ class TestClientAuthResponse:
             with patch('miniqmt_share.client.BgServingThread'):
                 with patch.dict(os.environ, {
                     "MINIQMT_SHARE_REMOTE_HOST": "localhost",
-                    "MINIQMT_SHARE_REMOTE_PORT": "18812",
+                    "MINIQMT_SHARE_REMOTE_PORT": "51812",
                     "MINIQMT_SHARE_CLIENT_ID": "test-client",
                     "MINIQMT_SHARE_CLIENT_SECRET": "test-secret"
                 }):
                     client = XtQuantRemote(
                         host="localhost",
-                        port=18812,
+                        port=51812,
                         client_id="test-client",
                         client_secret="test-secret",
                         heartbeat_interval=0
@@ -74,7 +74,7 @@ class TestClientAuthResponse:
             with patch('miniqmt_share.client.BgServingThread'):
                 client = XtQuantRemote(
                     host="localhost",
-                    port=18812,
+                    port=51812,
                     client_id="test-client",
                     client_secret="test-secret",
                     heartbeat_interval=0
@@ -134,7 +134,7 @@ class TestClientProperties:
             with patch('miniqmt_share.client.BgServingThread'):
                 client = XtQuantRemote(
                     host="localhost",
-                    port=18812,
+                    port=51812,
                     client_id="test",
                     client_secret="test",
                     heartbeat_interval=0
@@ -158,7 +158,7 @@ class TestClientProperties:
             with patch('miniqmt_share.client.BgServingThread'):
                 client = XtQuantRemote(
                     host="localhost",
-                    port=18812,
+                    port=51812,
                     client_id="test",
                     client_secret="test",
                     heartbeat_interval=0

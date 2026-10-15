@@ -109,7 +109,7 @@ class TestXtQuantRemote:
         mock_conn.root.ping = Mock(return_value="pong")
         mock_connect.return_value = mock_conn
         
-        client = XtQuantRemote(host="localhost", port=18812, client_secret="", auto_reconnect=False)
+        client = XtQuantRemote(host="localhost", port=51812, client_secret="", auto_reconnect=False)
         
         mock_connect.assert_called_once()
         assert client._connected is True
@@ -160,7 +160,7 @@ class TestXtQuantRemote:
         
         client = XtQuantRemote(
             host="localhost", 
-            port=18812, 
+            port=51812, 
             client_secret="my-secret",
             auto_reconnect=False
         )

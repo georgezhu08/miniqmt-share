@@ -114,42 +114,41 @@ class TestLoggingProxyPermission:
         """每个测试前重置"""
         reset_permission_checker()
 
-    def _create_proxy(self, mock_target, level):
+    def _create_proxy(self, mock_target, level, permission_checker):
         """创建带权限检查的代理"""
-        checker = PermissionChecker()
         return LoggingProxy(
             mock_target, 'xtdata',
             lambda: "test-client",
-            checker,
+            permission_checker,
             level
         )
 
-    def test_free_user_basic_api(self):
+    def test_free_user_basic_api(self, permission_checker):
         """测试 FREE 用户可调用 basic API"""
         mock_xtdata = MagicMock()
         mock_xtdata.get_stock_list_in_sector.return_value = ["000001.SZ"]
 
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE, permission_checker)
         result = proxy.get_stock_list_in_sector("沪深A股")
 
         assert _deserialize_from_transfer(result) == ["000001.SZ"]
         mock_xtdata.get_stock_list_in_sector.assert_called_once_with("沪深A股")
 
-    def test_free_user_daily_api(self):
+    def test_free_user_daily_api(self, permission_checker):
         """测试 FREE 用户可调用 daily API (period=1d)"""
         mock_xtdata = MagicMock()
         mock_xtdata.get_market_data.return_value = {"000001.SZ": {}}
 
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE, permission_checker)
         result = proxy.get_market_data(["000001.SZ"], "1d")
 
         assert _deserialize_from_transfer(result) == {"000001.SZ": {}}
 
-    def test_free_user_minute_api_denied(self):
+    def test_free_user_minute_api_denied(self, permission_checker):
         """测试 FREE 用户调用 minute API 被拒绝"""
         mock_xtdata = MagicMock()
 
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE, permission_checker)
 
         with pytest.raises(AuthPermissionError) as exc_info:
             proxy.get_market_data(["000001.SZ"], "5m")
@@ -157,107 +156,107 @@ class TestLoggingProxyPermission:
         assert exc_info.value.permission == Permission.MINUTE
         mock_xtdata.get_market_data.assert_not_called()
 
-    def test_plus_user_minute_api(self):
+    def test_plus_user_minute_api(self, permission_checker):
         """测试 PLUS 用户可调用 minute API"""
         mock_xtdata = MagicMock()
         mock_xtdata.get_market_data.return_value = {"000001.SZ": {}}
 
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS, permission_checker)
         result = proxy.get_market_data(["000001.SZ"], "5m")
 
         assert _deserialize_from_transfer(result) == {"000001.SZ": {}}
 
-    def test_plus_user_tick_api_denied(self):
+    def test_plus_user_tick_api_denied(self, permission_checker):
         """测试 PLUS 用户调用 tick API 被拒绝"""
         mock_xtdata = MagicMock()
 
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS, permission_checker)
 
         with pytest.raises(AuthPermissionError) as exc_info:
             proxy.get_market_data(["000001.SZ"], "tick")
 
         assert exc_info.value.permission == Permission.TICK
 
-    def test_plus_user_1m_api_denied(self):
+    def test_plus_user_1m_api_denied(self, permission_checker):
         """测试 PLUS 用户调用 1m API 被拒绝 (1m 属于 tick 权限)"""
         mock_xtdata = MagicMock()
 
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS, permission_checker)
 
         with pytest.raises(AuthPermissionError) as exc_info:
             proxy.get_market_data(["000001.SZ"], "1m")
 
         assert exc_info.value.permission == Permission.TICK
 
-    def test_standard_user_tick_api(self):
+    def test_standard_user_tick_api(self, permission_checker):
         """测试 STANDARD 用户可调用 tick API"""
         mock_xtdata = MagicMock()
         mock_xtdata.get_market_data.return_value = {"000001.SZ": {}}
 
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD, permission_checker)
         result = proxy.get_market_data(["000001.SZ"], "tick")
 
         assert _deserialize_from_transfer(result) == {"000001.SZ": {}}
 
-    def test_standard_user_1m_api(self):
+    def test_standard_user_1m_api(self, permission_checker):
         """测试 STANDARD 用户可调用 1m API"""
         mock_xtdata = MagicMock()
         mock_xtdata.get_market_data.return_value = {"000001.SZ": {}}
 
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD, permission_checker)
         result = proxy.get_market_data(["000001.SZ"], "1m")
 
         assert _deserialize_from_transfer(result) == {"000001.SZ": {}}
 
-    def test_standard_user_get_full_tick(self):
+    def test_standard_user_get_full_tick(self, permission_checker):
         """测试 STANDARD 用户可调用 get_full_tick"""
         mock_xtdata = MagicMock()
         mock_xtdata.get_full_tick.return_value = {"000001.SZ": {"lastPrice": 10.5}}
 
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD, permission_checker)
         result = proxy.get_full_tick(["000001.SZ"])
 
         assert _deserialize_from_transfer(result) == {"000001.SZ": {"lastPrice": 10.5}}
 
-    def test_financial_data_permission(self):
+    def test_financial_data_permission(self, permission_checker):
         """测试财务数据权限 (minute 级别)"""
         mock_xtdata = MagicMock()
         mock_xtdata.get_financial_data.return_value = {}
 
         # FREE 用户不能调用
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE, permission_checker)
         with pytest.raises(AuthPermissionError) as exc_info:
             proxy.get_financial_data("000001.SZ")
         assert exc_info.value.permission == Permission.MINUTE
 
         # PLUS 用户可以调用
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS, permission_checker)
         result = proxy.get_financial_data("000001.SZ")
         assert _deserialize_from_transfer(result) == {}
 
-    def test_callback_permission(self):
+    def test_callback_permission(self, permission_checker):
         """测试回调权限"""
         mock_xtdata = MagicMock()
         mock_xtdata.subscribe_whole_quote.return_value = None
 
         # PLUS 用户不能调用
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS, permission_checker)
         with pytest.raises(AuthPermissionError) as exc_info:
             proxy.subscribe_whole_quote("000001.SZ", lambda x: None)
         assert exc_info.value.permission == Permission.CALLBACK
 
         # STANDARD 用户可以调用
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD, permission_checker)
         result = proxy.subscribe_whole_quote("000001.SZ", lambda x: None)
         assert _deserialize_from_transfer(result) is None
 
-    def test_get_full_kline_permission(self):
+    def test_get_full_kline_permission(self, permission_checker):
         """测试 get_full_kline 权限检测"""
         mock_xtdata = MagicMock()
         mock_xtdata.get_full_kline.return_value = []
 
         # FREE 用户可以调用日线
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE, permission_checker)
         proxy.get_full_kline("000001.SZ", "1d")
         assert mock_xtdata.get_full_kline.called
 
@@ -267,12 +266,12 @@ class TestLoggingProxyPermission:
             proxy.get_full_kline("000001.SZ", "5m")
 
         # PLUS 用户不能调用 tick
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS, permission_checker)
         with pytest.raises(AuthPermissionError):
             proxy.get_full_kline("000001.SZ", "tick")
 
         # STANDARD 用户可以调用 tick
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD, permission_checker)
         proxy.get_full_kline("000001.SZ", "tick")
         assert mock_xtdata.get_full_kline.called
 
@@ -319,68 +318,67 @@ class TestPeriodDynamicPermission:
         """每个测试前重置"""
         reset_permission_checker()
 
-    def _create_proxy(self, mock_target, level):
+    def _create_proxy(self, mock_target, level, permission_checker):
         """创建带权限检查的代理"""
-        checker = PermissionChecker()
         return LoggingProxy(
             mock_target, 'xtdata',
             lambda: "test-client",
-            checker,
+            permission_checker,
             level
         )
 
-    def test_period_1d_free_allowed(self):
+    def test_period_1d_free_allowed(self, permission_checker):
         """测试 period=1d FREE 用户允许"""
         mock_xtdata = MagicMock()
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE, permission_checker)
 
         proxy.get_market_data(["000001.SZ"], "1d")
         assert mock_xtdata.get_market_data.called
 
-    def test_period_1w_free_allowed(self):
+    def test_period_1w_free_allowed(self, permission_checker):
         """测试 period=1w FREE 用户允许"""
         mock_xtdata = MagicMock()
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.FREE, permission_checker)
 
         proxy.get_market_data(["000001.SZ"], "1w")
         assert mock_xtdata.get_market_data.called
 
-    def test_period_5m_plus_allowed(self):
+    def test_period_5m_plus_allowed(self, permission_checker):
         """测试 period=5m PLUS 用户允许"""
         mock_xtdata = MagicMock()
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS, permission_checker)
 
         proxy.get_market_data(["000001.SZ"], "5m")
         assert mock_xtdata.get_market_data.called
 
-    def test_period_1h_plus_allowed(self):
+    def test_period_1h_plus_allowed(self, permission_checker):
         """测试 period=1h PLUS 用户允许"""
         mock_xtdata = MagicMock()
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS, permission_checker)
 
         proxy.get_market_data(["000001.SZ"], "1h")
         assert mock_xtdata.get_market_data.called
 
-    def test_period_tick_standard_allowed(self):
+    def test_period_tick_standard_allowed(self, permission_checker):
         """测试 period=tick STANDARD 用户允许"""
         mock_xtdata = MagicMock()
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD, permission_checker)
 
         proxy.get_market_data(["000001.SZ"], "tick")
         assert mock_xtdata.get_market_data.called
 
-    def test_period_1m_standard_allowed(self):
+    def test_period_1m_standard_allowed(self, permission_checker):
         """测试 period=1m STANDARD 用户允许"""
         mock_xtdata = MagicMock()
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.STANDARD, permission_checker)
 
         proxy.get_market_data(["000001.SZ"], "1m")
         assert mock_xtdata.get_market_data.called
 
-    def test_period_via_kwargs(self):
+    def test_period_via_kwargs(self, permission_checker):
         """测试 period 通过 kwargs 传递"""
         mock_xtdata = MagicMock()
-        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS)
+        proxy = self._create_proxy(mock_xtdata, AccountLevel.PLUS, permission_checker)
 
         proxy.get_market_data_ex(stock_list=["000001.SZ"], period="15m")
         assert mock_xtdata.get_market_data_ex.called

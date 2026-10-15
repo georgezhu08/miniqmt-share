@@ -5,7 +5,7 @@
 #   ./test_xtdata_cli.sh                    # 默认: json格式, compact模式
 #   ./test_xtdata_cli.sh --format text      # 使用 text 格式
 #   ./test_xtdata_cli.sh --no-compact       # 不使用 compact 模式
-#   ./test_xtdata_cli.sh --host 192.168.1.100 --port 18812
+#   ./test_xtdata_cli.sh --host 192.168.1.100 --port 51812
 #   ./test_xtdata_cli.sh --limit 5          # 限制输出条数
 #   ./test_xtdata_cli.sh --verbose          # 显示详细日志
 #   ./test_xtdata_cli.sh --skip-download    # 跳过下载步骤
@@ -16,7 +16,7 @@ set -e
 
 # ==================== 默认参数 ====================
 HOST="${MINIQMT_SHARE_REMOTE_HOST:-localhost}"
-PORT="${MINIQMT_SHARE_REMOTE_PORT:-18812}"
+PORT="${MINIQMT_SHARE_REMOTE_PORT:-51812}"
 FORMAT="json"
 COMPACT="--compact"
 LIMIT=""
@@ -82,7 +82,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "选项:"
             echo "  --host HOST         服务端地址 (默认: localhost)"
-            echo "  --port PORT         服务端端口 (默认: 18812)"
+            echo "  --port PORT         服务端端口 (默认: 51812)"
             echo "  --format, -f FMT    输出格式: json/text/csv (默认: json)"
             echo "  --no-compact        不使用紧凑模式"
             echo "  --limit, -n N       限制输出条数"

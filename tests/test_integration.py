@@ -8,6 +8,7 @@ Run with: pytest -m integration
 import pytest
 import time
 import sys
+import os
 sys.path.insert(0, '.')
 
 
@@ -17,10 +18,11 @@ class TestIntegration:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        """设置测试环境"""
-        self.host = "localhost"
-        self.port = 18812
-        self.client_secret = "test-secret"
+        """设置测试环境（可通过环境变量指向远程服务端）"""
+        self.host = os.environ.get("MINIQMT_SHARE_REMOTE_HOST", "localhost")
+        self.port = int(os.environ.get("MINIQMT_SHARE_REMOTE_PORT", "51812"))
+        self.client_id = os.environ.get("MINIQMT_SHARE_CLIENT_ID", "integration-test")
+        self.client_secret = os.environ.get("MINIQMT_SHARE_CLIENT_SECRET", "test-secret")
 
     def test_connection(self):
         """测试基本连接"""
@@ -29,6 +31,7 @@ class TestIntegration:
         with XtQuantRemote(
             host=self.host,
             port=self.port,
+            client_id=self.client_id,
             client_secret=self.client_secret,
             auto_reconnect=False
         ) as client:
@@ -41,6 +44,7 @@ class TestIntegration:
         with XtQuantRemote(
             host=self.host,
             port=self.port,
+            client_id=self.client_id,
             client_secret=self.client_secret
         ) as client:
             result = client.xtdata.get_stock_list_in_sector("沪深A股")
@@ -53,6 +57,7 @@ class TestIntegration:
         with XtQuantRemote(
             host=self.host,
             port=self.port,
+            client_id=self.client_id,
             client_secret=self.client_secret
         ) as client:
             status = client.get_service_status()
